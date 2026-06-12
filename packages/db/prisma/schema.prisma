@@ -8,6 +8,8 @@
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["views"]
+  // "native" for local dev; rhel target for the Vercel/Lambda runtime.
+  binaryTargets   = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
