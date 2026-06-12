@@ -1,0 +1,43 @@
+# Node
+node_modules/
+.pnpm-store/
+dist/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.uv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+htmlcov/
+.coverage
+
+# Env / secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Prisma
+packages/db/prisma/*.db
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Scraper artifacts
+services/scraper/.cache/
+services/scraper/var/
+*.log
+
+# Playwright
+playwright-report/
+test-results/

@@ -1,0 +1,250 @@
+// ProteinScraper database schema.
+// Single source of truth shared by the Python scraper (writes) and the Next.js app (reads).
+//
+// IDs are database-generated UUIDs (gen_random_uuid()) rather than Prisma's client-side
+// cuid(), because the Python scraper writes directly to Postgres without Prisma Client and
+// still needs IDs to be generated for it.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["views"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum SourceType {
+  shopify
+  jsonld
+  walmart
+  amazon
+}
+
+enum ExtractionMethod {
+  shopify_json
+  json_ld
+  html_parse
+  llm
+  manual
+}
+
+enum IssueStage {
+  fetch
+  extract
+  normalize
+  validate
+  upsert
+}
+
+enum IssueSeverity {
+  warning
+  error
+}
+
+// ---------------------------------------------------------------------------
+// Core catalog
+// ---------------------------------------------------------------------------
+
+/// A retailer / website we pull data from.
+model Source {
+  id        String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug      String     @unique
+  name      String
+  type      SourceType
+  baseUrl   String
+  enabled   Boolean    @default(true)
+  /// Per-source crawl configuration (rate limits, paths, selectors, etc.)
+  config    Json?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  listings Listing[]
+  issues   ExtractionIssue[]
+
+  @@map("sources")
+}
+
+/// A protein brand (e.g. "Optimum Nutrition").
+model Brand {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug      String   @unique
+  name      String
+  website   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products Product[]
+
+  @@map("brands")
+}
+
+/// Canonical product. The same physical product sold by multiple retailers
+/// should collapse onto one Product (cross-source dedup, added later).
+model Product {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  brandId   String   @db.Uuid
+  name      String
+  /// whey | isolate | concentrate | casein | plant | blend | collagen | ...
+  category  String?
+  /// Normalized identity key for dedup: brand-slug + normalized product name.
+  dedupKey  String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  brand    Brand     @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  listings Listing[]
+
+  @@index([brandId])
+  @@map("products")
+}
+
+/// A product as sold at a single Source (one URL / SKU).
+model Listing {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sourceId    String   @db.Uuid
+  productId   String   @db.Uuid
+  url         String
+  /// The source's own product identifier (Shopify handle, SKU, ASIN, ...).
+  sourceSku   String
+  title       String
+  /// Raw payload snapshot from the source for reprocessing / debugging.
+  rawPayload  Json?
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+
+  source   Source    @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  product  Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variants Variant[]
+
+  @@unique([sourceId, sourceSku])
+  @@index([productId])
+  @@map("listings")
+}
+
+/// A purchasable variant of a listing: a (flavor, size) combination.
+model Variant {
+  id              String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  listingId       String  @db.Uuid
+  flavor          String?
+  /// Net container weight in grams (normalized).
+  sizeG           Float?
+  /// Raw size label as shown on the source, e.g. "5 lb".
+  sizeLabel       String?
+  /// The source's variant identifier.
+  sourceVariantId String
+
+  listing   Listing            @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  nutrition Nutrition?
+  prices    PriceObservation[]
+
+  @@unique([listingId, sourceVariantId])
+  @@map("variants")
+}
+
+/// Per-serving nutrition facts for a variant (latest known values).
+model Nutrition {
+  id                   String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  variantId            String           @unique @db.Uuid
+  servingSizeG         Float?
+  servingsPerContainer Float?
+  proteinG             Float?
+  fatG                 Float?
+  carbG                Float?
+  sugarG               Float?
+  caloriesKcal         Float?
+  /// 0..1 confidence that these values are correct.
+  confidence           Float            @default(0)
+  extractionMethod     ExtractionMethod
+  updatedAt            DateTime         @updatedAt
+
+  variant Variant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@map("nutrition")
+}
+
+/// Time series of price/availability observations for a variant.
+model PriceObservation {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  variantId  String   @db.Uuid
+  priceCents Int
+  currency   String   @default("USD")
+  inStock    Boolean  @default(true)
+  capturedAt DateTime @default(now())
+
+  variant Variant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@index([variantId, capturedAt])
+  @@map("price_observations")
+}
+
+/// A failed or low-confidence extraction, flagged for review instead of
+/// silently writing bad data into the catalog.
+model ExtractionIssue {
+  id        String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sourceId  String?       @db.Uuid
+  listingId String?       @db.Uuid
+  url       String?
+  stage     IssueStage
+  severity  IssueSeverity @default(error)
+  message   String
+  payload   Json?
+  resolved  Boolean       @default(false)
+  createdAt DateTime      @default(now())
+
+  source Source? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+
+  @@index([resolved, createdAt])
+  @@map("extraction_issues")
+}
+
+// ---------------------------------------------------------------------------
+// Read-only view: derived comparison metrics per variant.
+// The CREATE VIEW lives in a migration (see migrations/.../listing_metrics).
+// Columns here must match that SQL exactly. ID columns are cast to text in the
+// view so they surface as plain String here.
+// ---------------------------------------------------------------------------
+
+view ListingMetrics {
+  variantId   String  @unique @map("variant_id")
+  listingId   String  @map("listing_id")
+  productId   String  @map("product_id")
+  sourceId    String  @map("source_id")
+  sourceSlug  String  @map("source_slug")
+  sourceType  String  @map("source_type")
+  brandName   String  @map("brand_name")
+  productName String  @map("product_name")
+  category    String? @map("category")
+  flavor      String? @map("flavor")
+  sizeG       Float?  @map("size_g")
+  url         String  @map("url")
+
+  priceCents Int      @map("price_cents")
+  currency   String   @map("currency")
+  inStock    Boolean  @map("in_stock")
+  capturedAt DateTime @map("captured_at")
+
+  servingSizeG         Float? @map("serving_size_g")
+  servingsPerContainer Float? @map("servings_per_container")
+  proteinG             Float? @map("protein_g")
+  fatG                 Float? @map("fat_g")
+  carbG                Float? @map("carb_g")
+  caloriesKcal         Float? @map("calories_kcal")
+  confidence           Float  @map("confidence")
+
+  // Derived metrics
+  totalProteinG      Float? @map("total_protein_g")
+  proteinPerDollar   Float? @map("protein_per_dollar")
+  costPer30gProtein  Float? @map("cost_per_30g_protein")
+  proteinPctWeight   Float? @map("protein_pct_weight")
+  fatPerProtein      Float? @map("fat_per_protein")
+  caloriesPerProtein Float? @map("calories_per_protein")
+  pricePerServing    Float? @map("price_per_serving")
+
+  @@map("listing_metrics")
+}

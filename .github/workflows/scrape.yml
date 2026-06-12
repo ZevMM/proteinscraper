@@ -1,0 +1,55 @@
+name: Daily scrape
+
+on:
+  schedule:
+    # 09:00 UTC daily. Adjust as needed.
+    - cron: "0 9 * * *"
+  workflow_dispatch:
+    inputs:
+      source:
+        description: "Single source slug to run (blank = all enabled)"
+        required: false
+        default: ""
+
+concurrency:
+  group: scrape
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    name: Discover + refresh listings
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Ensure the production DB schema is current before writing to it.
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @proteinscraper/db migrate:deploy
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - name: Install scraper
+        working-directory: services/scraper
+        run: uv sync --frozen
+      - name: Seed sources
+        working-directory: services/scraper
+        run: uv run scraper seed
+      - name: Run pipeline
+        working-directory: services/scraper
+        run: |
+          if [ -n "${{ github.event.inputs.source }}" ]; then
+            uv run scraper run --source "${{ github.event.inputs.source }}" -v
+          else
+            uv run scraper run --all -v
+          fi

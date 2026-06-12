@@ -1,0 +1,65 @@
+# Seed sources for the MVP: US direct-to-consumer protein brands on Shopify.
+# Each exposes a public /products.json feed (no API key, ToS-friendly).
+# `enabled: false` keeps a source defined but out of scheduled runs.
+#
+# config keys (all optional):
+#   max_pages          int    pages of /products.json to fetch (250 products/page)
+#   include_keywords   [str]  product must match one (default: ["protein"])
+#   exclude_keywords   [str]  product must match none
+
+sources:
+  - slug: kaged
+    name: Kaged
+    type: shopify
+    base_url: https://www.kaged.com
+    config:
+      max_pages: 3
+
+  - slug: naked-nutrition
+    name: Naked Nutrition
+    type: shopify
+    base_url: https://nakednutrition.com
+    config:
+      max_pages: 3
+
+  - slug: jacked-factory
+    name: Jacked Factory
+    type: shopify
+    base_url: https://www.jackedfactory.com
+    config:
+      max_pages: 3
+
+  - slug: bpn
+    name: Bare Performance Nutrition
+    type: shopify
+    base_url: https://bpnsupps.com
+    config:
+      max_pages: 3
+
+  - slug: promix
+    name: Promix Nutrition
+    type: shopify
+    base_url: https://promixnutrition.com
+    config:
+      max_pages: 3
+
+  - slug: transparent-labs
+    name: Transparent Labs
+    type: shopify
+    base_url: https://www.transparentlabs.com
+    config:
+      max_pages: 3
+
+  - slug: gnarly
+    name: Gnarly Nutrition
+    type: shopify
+    base_url: https://www.gognarly.com
+    config:
+      max_pages: 3
+
+  - slug: ryse
+    name: RYSE Supplements
+    type: shopify
+    base_url: https://rysesupps.com
+    config:
+      max_pages: 3

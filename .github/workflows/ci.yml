@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scraper:
+    name: Scraper (lint, types, tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/scraper
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - run: uv sync --frozen
+      - run: uv run ruff check .
+      - run: uv run mypy src
+      - run: uv run pytest -q
+
+  web:
+    name: Web (types, build) + migrations
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: protein
+          POSTGRES_PASSWORD: protein
+          POSTGRES_DB: protein
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U protein"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://protein:protein@localhost:5432/protein?schema=public
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Apply migrations (validates schema + view)
+        run: pnpm --filter @proteinscraper/db migrate:deploy
+      - name: Generate Prisma client
+        run: pnpm --filter @proteinscraper/db generate
+      - run: pnpm --filter @proteinscraper/web typecheck
+      - run: pnpm --filter @proteinscraper/web build
