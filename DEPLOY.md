@@ -49,18 +49,24 @@ gh secret set ANTHROPIC_API_KEY --body "<your-key>"   # optional; enables LLM nu
 
 ## 4. Deploy the web app to Vercel
 
-The repo root `vercel.json` already sets the monorepo build (Prisma generate +
-filtered Next build).
+Vercel project settings (set once, in Project → Settings → General):
+
+- **Root Directory**: `apps/web` (so Next.js is detected). Vercel still installs
+  the whole pnpm workspace from the repo root.
+- The repo-root `postinstall` runs `prisma generate`, so the Prisma client is
+  ready before `next build` — no custom build command needed.
+- `apps/web/next.config.mjs` sets `outputFileTracingRoot` to the repo root so the
+  Prisma query engine is bundled into the serverless functions.
 
 ```bash
-vercel link            # link this dir to a Vercel project
-vercel env add DATABASE_URL production     # paste the POOLED url
-vercel --prod          # deploy
+vercel link
+# Set the POOLED url as a Production env var (paste when prompted, or set it in
+# the dashboard — confirm it is the full postgresql:// string, not empty):
+vercel env add DATABASE_URL production
+vercel --prod
 ```
 
-(Or import the GitHub repo in the Vercel dashboard and set `DATABASE_URL` in
-Project → Settings → Environment Variables. Leave Root Directory at the repo root
-so `vercel.json` is used.)
+> Gotcha: a Production env change only takes effect on the **next** deploy.
 
 ## 5. Verify
 

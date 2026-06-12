@@ -41,3 +41,5 @@ services/scraper/var/
 # Playwright
 playwright-report/
 test-results/
+
+.vercel

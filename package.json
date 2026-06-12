@@ -8,6 +8,7 @@
   },
   "packageManager": "pnpm@11.6.0",
   "scripts": {
+    "postinstall": "pnpm --filter @proteinscraper/db generate",
     "db:generate": "pnpm --filter @proteinscraper/db generate",
     "db:migrate": "pnpm --filter @proteinscraper/db migrate",
     "db:push": "pnpm --filter @proteinscraper/db push",
