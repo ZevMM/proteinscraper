@@ -63,3 +63,73 @@ sources:
     base_url: https://rysesupps.com
     config:
       max_pages: 3
+
+  - slug: 1st-phorm
+    name: 1st Phorm
+    type: shopify
+    base_url: https://1stphorm.com
+    config:
+      max_pages: 4
+
+  - slug: muscle-feast
+    name: Muscle Feast
+    type: shopify
+    base_url: https://www.musclefeast.com
+    config:
+      max_pages: 3
+
+  - slug: true-nutrition
+    name: True Nutrition
+    type: shopify
+    base_url: https://truenutrition.com
+    config:
+      max_pages: 3
+
+  - slug: nutrabio
+    name: NutraBio
+    type: shopify
+    base_url: https://nutrabio.com
+    config:
+      max_pages: 4
+
+  - slug: ascent
+    name: Ascent Protein
+    type: shopify
+    base_url: https://www.ascentprotein.com
+    config:
+      max_pages: 3
+
+  - slug: swolverine
+    name: Swolverine
+    type: shopify
+    base_url: https://www.swolverine.com
+    config:
+      max_pages: 3
+
+  - slug: earth-fed-muscle
+    name: Earth Fed Muscle
+    type: shopify
+    base_url: https://www.earthfedmuscle.com
+    config:
+      max_pages: 3
+
+  - slug: ghost
+    name: Ghost Lifestyle
+    type: shopify
+    base_url: https://www.ghostlifestyle.com
+    config:
+      max_pages: 4
+
+  - slug: raw-nutrition
+    name: RAW Nutrition
+    type: shopify
+    base_url: https://getrawnutrition.com
+    config:
+      max_pages: 3
+
+  - slug: axe-sledge
+    name: Axe & Sledge
+    type: shopify
+    base_url: https://axeandsledge.com
+    config:
+      max_pages: 3

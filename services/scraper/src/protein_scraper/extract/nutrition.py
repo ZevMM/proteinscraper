@@ -78,3 +78,25 @@ def parse_nutrition_text(text: str) -> NutritionRecord:
 
 def parse_nutrition_html(html: str) -> NutritionRecord:
     return parse_nutrition_text(html_to_text(html))
+
+
+_MERGE_FIELDS = (
+    "serving_size_g", "servings_per_container", "protein_g", "fat_g",
+    "carb_g", "sugar_g", "calories_kcal",
+)
+
+
+def merge_nutrition(base: NutritionRecord, fallback: NutritionRecord) -> NutritionRecord:
+    """Fill fields missing from ``base`` using ``fallback`` (e.g. the LLM result).
+
+    If the fallback contributes anything, the record is marked as LLM-extracted.
+    """
+    merged = base.model_copy()
+    used_fallback = False
+    for field in _MERGE_FIELDS:
+        if getattr(merged, field) is None and getattr(fallback, field) is not None:
+            setattr(merged, field, getattr(fallback, field))
+            used_fallback = True
+    if used_fallback:
+        merged.extraction_method = ExtractionMethod.llm
+    return merged

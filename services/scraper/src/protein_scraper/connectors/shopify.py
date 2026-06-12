@@ -11,8 +11,9 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from ..extract.nutrition import html_to_text, parse_nutrition_text
-from ..models import ExtractionMethod, NutritionRecord, ProductRecord, VariantRecord
+from ..categorize import classify_category
+from ..extract.nutrition import html_to_text, merge_nutrition, parse_nutrition_text
+from ..models import NutritionRecord, ProductRecord, VariantRecord
 from ..units import clean_flavor, parse_servings, parse_weight_to_grams, to_cents
 from .base import Connector
 
@@ -23,20 +24,6 @@ _DEFAULT_EXCLUDE = [
 ]
 _FLAVOR_OPTIONS = {"flavor", "flavour", "taste"}
 _SIZE_OPTIONS = {"size", "weight", "servings", "container", "count", "bag size", "amount"}
-
-# Most specific first.
-_CATEGORY_KEYWORDS: list[tuple[str, str]] = [
-    ("collagen", "collagen"),
-    ("casein", "casein"),
-    ("vegan", "plant"),
-    ("plant", "plant"),
-    ("pea protein", "plant"),
-    ("soy", "plant"),
-    ("isolate", "isolate"),
-    ("concentrate", "concentrate"),
-    ("whey", "whey"),
-    ("blend", "blend"),
-]
 
 
 class ShopifyConnector(Connector):
@@ -83,11 +70,7 @@ class ShopifyConnector(Connector):
 
     def _classify(self, product: dict[str, Any]) -> str | None:
         # Classification can use tags for extra signal.
-        haystack = self._text(product, include_tags=True)
-        for keyword, category in _CATEGORY_KEYWORDS:
-            if keyword in haystack:
-                return category
-        return None
+        return classify_category(self._text(product, include_tags=True))
 
     def _option_indices(self, product: dict[str, Any]) -> tuple[int | None, int | None]:
         flavor_idx: int | None = None
@@ -109,22 +92,8 @@ class ShopifyConnector(Connector):
         if not record.is_complete() and self.llm is not None:
             llm_record = self.llm.extract_nutrition(text, title=product.get("title"))
             if llm_record is not None:
-                record = self._merge_nutrition(record, llm_record)
+                record = merge_nutrition(record, llm_record)
         return record
-
-    @staticmethod
-    def _merge_nutrition(base: NutritionRecord, fallback: NutritionRecord) -> NutritionRecord:
-        """Fill fields missing from ``base`` using ``fallback`` (the LLM result)."""
-        used_fallback = False
-        merged = base.model_copy()
-        for field in ("serving_size_g", "servings_per_container", "protein_g", "fat_g",
-                      "carb_g", "sugar_g", "calories_kcal"):
-            if getattr(merged, field) is None and getattr(fallback, field) is not None:
-                setattr(merged, field, getattr(fallback, field))
-                used_fallback = True
-        if used_fallback:
-            merged.extraction_method = ExtractionMethod.llm
-        return merged
 
     @staticmethod
     def _variant_nutrition(
