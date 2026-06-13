@@ -18,7 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link href="/" className="text-lg font-bold tracking-tight">
               Supp<span className="text-brand-600">Search</span>
             </Link>
-            <span className="text-sm text-neutral-500">
+            <span className="hidden text-sm text-neutral-500 sm:inline">
               Compare protein supplements by what matters
             </span>
           </div>

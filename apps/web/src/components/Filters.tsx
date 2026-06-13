@@ -10,9 +10,9 @@ export function FilterBar({ filters, facets }: { filters: Filters; facets: Facet
   return (
     <form
       method="get"
-      className="grid grid-cols-2 gap-3 rounded-lg border border-neutral-200 bg-white p-4 md:grid-cols-4 lg:grid-cols-6"
+      className="grid grid-cols-1 gap-3 rounded-lg border border-neutral-200 bg-white p-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6"
     >
-      <label className="col-span-2 flex flex-col gap-1 text-xs font-medium text-neutral-600">
+      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-600 sm:col-span-2">
         Search
         <input
           type="text"
@@ -129,7 +129,7 @@ export function FilterBar({ filters, facets }: { filters: Filters; facets: Facet
         In stock only
       </label>
 
-      <div className="col-span-2 flex items-end gap-2 lg:col-span-2">
+      <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-2">
         <button
           type="submit"
           className="rounded bg-brand-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-brand-700"
