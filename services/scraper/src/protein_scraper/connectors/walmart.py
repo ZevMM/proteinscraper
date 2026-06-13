@@ -108,7 +108,6 @@ class WalmartConnector(Connector):
         name = str(item.get("name") or item_id)
         brand = str(item.get("brandName") or "Unknown")
         upc = item.get("upc")
-        msrp = to_cents(item.get("msrp"))
         # productTrackingUrl is an affiliate link with a literal "|PUBID|"
         # placeholder that only works once an Impact publisher id is set. Use the
         # direct product URL for working links; use tracking only if configured.
@@ -132,7 +131,9 @@ class WalmartConnector(Connector):
             currency="USD",
             in_stock=in_stock,
             upc=str(upc) if upc else None,
-            compare_at_price_cents=msrp if msrp and msrp > price_cents else None,
+            # Walmart's msrp is a list price, not a markdown — don't treat it as
+            # a sale (it would show false sale badges).
+            compare_at_price_cents=None,
             nutrition=None,  # filled by Open Food Facts enrichment via UPC
         )
         return ProductRecord(

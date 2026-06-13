@@ -34,7 +34,7 @@ async def test_extract_walmart_item():
 
     v = record.variants[0]
     assert v.price_cents == 7499
-    assert v.compare_at_price_cents == 8999  # msrp > sale price
+    assert v.compare_at_price_cents is None  # msrp is a list price, not a sale
     assert v.upc == "748927024074"
     assert v.in_stock is True
     assert v.size_g == pytest.approx(2267.96, abs=1.0)

@@ -126,9 +126,6 @@ class AmazonConnector(Connector):
         brand = self._brand(details, info) or "Unknown"
         upc = self._find_upc(details)
         nutrition = self._nutrition_from_info(info)
-        original = to_cents(
-            ref.get("product_original_price") or details.get("product_original_price")
-        )
         size_g = parse_weight_to_grams(
             str(info.get("Item Weight", ""))
         ) or parse_container_size_grams(title)
@@ -149,7 +146,9 @@ class AmazonConnector(Connector):
             currency="USD",
             in_stock=in_stock,
             upc=upc,
-            compare_at_price_cents=original if original and original > price_cents else None,
+            # Amazon's "List Price" strikethrough is usually not a real markdown,
+            # so don't treat it as a sale.
+            compare_at_price_cents=None,
             # Amazon product_information often has protein + servings directly;
             # OFF enrichment (by UPC) fills any that it doesn't.
             nutrition=nutrition,
