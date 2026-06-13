@@ -72,10 +72,23 @@ def validate_nutrition(n: NutritionRecord, *, size_g: float | None = None) -> Va
             f"protein_g ({n.protein_g}) exceeds serving_size_g ({n.serving_size_g})"
         )
 
-    # A real container has at least one serving; < 1 means the serving math is
-    # broken (usually a bad container size), so reject rather than store garbage.
-    if n.servings_per_container is not None and n.servings_per_container < 1:
-        errors.append(f"servings_per_container ({n.servings_per_container}) is below 1")
+    # A comparison-worthy powder container has multiple servings; < 2 almost
+    # always means broken serving math (mis-parsed container size, or an OFF
+    # single-serving entry for the wrong SKU), so reject rather than store it.
+    if n.servings_per_container is not None and n.servings_per_container < 2:
+        errors.append(f"servings_per_container ({n.servings_per_container}) is below 2")
+
+    # If the container size implies an absurd per-serving weight (> 200 g, beyond
+    # even mass gainers), the servings count is wrong — reject. Catches e.g. a
+    # 1 kg tub reported as 1 serving.
+    if (
+        size_g is not None
+        and n.servings_per_container is not None
+        and n.servings_per_container > 0
+        and size_g / n.servings_per_container > 200
+    ):
+        implied = size_g / n.servings_per_container
+        errors.append(f"implied serving size {implied:.0f} g exceeds 200 g")
 
     # --- Soft sanity checks (reduce confidence, don't reject) --------------
     if n.serving_size_g is not None and not (

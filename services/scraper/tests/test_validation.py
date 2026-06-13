@@ -62,10 +62,30 @@ def test_negative_value_rejected():
     assert not result.ok
 
 
-def test_sub_one_serving_rejected():
-    # The Walmart/OFF bug produced servings < 1 from a mis-parsed container size.
+def test_too_few_servings_rejected():
+    # The Walmart/OFF bug produced < 2 servings from bad serving math.
+    for bad in (0.8, 1):
+        record = _good()
+        record.servings_per_container = bad
+        result = validate_nutrition(record)
+        assert not result.ok
+        assert any("below 2" in e for e in result.errors)
+
+
+def test_absurd_implied_serving_rejected():
+    # A 1 kg tub reported as 1 serving implies a 1000 g serving — reject.
     record = _good()
-    record.servings_per_container = 0.8
-    result = validate_nutrition(record)
+    record.servings_per_container = 1
+    result = validate_nutrition(record, size_g=1047)
     assert not result.ok
-    assert any("below 1" in e for e in result.errors)
+    assert any("implied serving size" in e for e in result.errors)
+
+
+def test_mass_gainer_large_servings_ok():
+    # A mass gainer (2.27 kg / 16 servings = ~142 g/serving) stays valid.
+    record = _good()
+    record.serving_size_g = 142
+    record.protein_g = 50
+    record.servings_per_container = 16
+    result = validate_nutrition(record, size_g=2270)
+    assert result.ok
