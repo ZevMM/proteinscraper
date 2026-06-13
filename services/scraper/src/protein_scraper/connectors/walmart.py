@@ -26,9 +26,15 @@ BASE_URL = "https://developer.api.walmart.com/api-proxy/service/affil/product/v2
 _PAGE_SIZE = 25
 _DEFAULT_QUERIES = [
     "whey protein powder",
+    "whey protein isolate",
     "plant protein powder",
+    "vegan protein powder",
     "casein protein powder",
-    "protein isolate powder",
+    "mass gainer protein powder",
+    "grass fed whey protein",
+    "egg white protein powder",
+    "collagen protein powder",
+    "protein powder unflavored",
 ]
 _EXCLUDE = [
     "bar", "ready to drink", "rtd", "shake", "drink", "snack", "cookie",

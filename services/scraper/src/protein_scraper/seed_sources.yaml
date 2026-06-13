@@ -134,19 +134,78 @@ sources:
     config:
       max_pages: 3
 
+  - slug: orgain
+    name: Orgain
+    type: shopify
+    base_url: https://www.orgain.com
+    config:
+      max_pages: 1
+
+  - slug: kos
+    name: KOS
+    type: shopify
+    base_url: https://kos.com
+    config:
+      max_pages: 1
+
+  - slug: owyn
+    name: OWYN
+    type: shopify
+    base_url: https://liveowyn.com
+    config:
+      max_pages: 1
+
+  - slug: gainful
+    name: Gainful
+    type: shopify
+    base_url: https://gainful.com
+    config:
+      max_pages: 1
+
+  - slug: innermost
+    name: Innermost
+    type: shopify
+    base_url: https://liveinnermost.com
+    config:
+      max_pages: 1
+
+  - slug: jocko-fuel
+    name: Jocko Fuel
+    type: shopify
+    base_url: https://jockofuel.com
+    config:
+      max_pages: 1
+
+  - slug: alpha-lion
+    name: Alpha Lion
+    type: shopify
+    base_url: https://alphalion.com
+    config:
+      max_pages: 1
+
+  - slug: redcon1
+    name: REDCON1
+    type: shopify
+    base_url: https://redcon1.com
+    config:
+      max_pages: 1
+
+  - slug: momentous
+    name: Momentous
+    type: shopify
+    base_url: https://livemomentous.com
+    config:
+      max_pages: 1
+
   # Walmart via the official IO Affiliate API. No-ops until WALMART_CONSUMER_ID +
   # WALMART_PRIVATE_KEY (+ WALMART_KEY_VERSION) are set in the environment.
   - slug: walmart
     name: Walmart
     type: walmart
     base_url: https://www.walmart.com
+    # queries omitted -> uses the connector's broadened default set.
     config:
-      max_pages: 4
-      queries:
-        - whey protein powder
-        - plant protein powder
-        - casein protein powder
-        - protein isolate powder
+      max_pages: 2
 
   # Amazon via the RapidAPI "Real-Time Amazon Data" provider. enabled:false keeps
   # it out of the daily --all run; a separate weekly workflow runs it explicitly
