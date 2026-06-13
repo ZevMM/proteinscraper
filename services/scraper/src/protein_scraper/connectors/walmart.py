@@ -91,10 +91,6 @@ class WalmartConnector(Connector):
     @staticmethod
     def _is_protein_powder(item: dict[str, Any]) -> bool:
         name = str(item.get("name", ""))
-        # Skip third-party marketplace offers: their price is the seller's, not
-        # Walmart's buy-box price, so it won't match the listing the user sees.
-        if item.get("marketplace") is True:
-            return False
         if is_multipack(name):
             return False
         text = f"{name} {item.get('categoryPath', '')}".lower()
@@ -102,13 +98,42 @@ class WalmartConnector(Connector):
             return False
         return not any(word in text for word in _EXCLUDE)
 
+    async def _lookup(self, item_id: str) -> dict[str, Any] | None:
+        """Fetch fresh item data via Product Lookup. The Search API's price is
+        often stale (and may be a marketplace offer), but the item lookup returns
+        the current buy-box price."""
+        publisher_id = get_settings().walmart_publisher_id
+        url = f"{BASE_URL}/items/{item_id}"
+        if publisher_id:
+            url += f"?publisherId={quote(publisher_id)}"
+        try:
+            raw = await self.fetcher.get_text(url, headers=self._auth_headers())
+        except Exception as exc:
+            logger.warning("walmart item lookup failed for %s: %s", item_id, exc)
+            return None
+        data = json.loads(raw)
+        items = data.get("items")
+        if isinstance(items, list):
+            return items[0] if items else None
+        return data if data.get("itemId") else None
+
     async def extract(self, ref: dict[str, Any]) -> ProductRecord | None:
-        item = ref
+        item_id = str(ref.get("itemId"))
+        if not item_id:
+            return None
+        # Re-fetch the item for an accurate, current price (Search prices lag).
+        item = await self._lookup(item_id)
+        if item is None:
+            return None
+        return self.build_record(item)
+
+    def build_record(self, item: dict[str, Any]) -> ProductRecord | None:
+        """Pure (no I/O) assembly of a record from a Walmart item payload."""
+        item_id = str(item.get("itemId"))
         price_cents = to_cents(item.get("salePrice"))
-        if not price_cents:
+        if not item_id or not price_cents:
             return None
 
-        item_id = str(item.get("itemId"))
         name = str(item.get("name") or item_id)
         brand = str(item.get("brandName") or "Unknown")
         upc = item.get("upc")

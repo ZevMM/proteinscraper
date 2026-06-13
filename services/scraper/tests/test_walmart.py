@@ -21,9 +21,9 @@ def _connector() -> WalmartConnector:
     return WalmartConnector(SOURCE, fetcher=None, llm=None)
 
 
-@pytest.mark.asyncio
-async def test_extract_walmart_item():
-    record = await _connector().extract(ITEM)
+def test_build_record_from_item():
+    # build_record is pure; extract() adds the Product Lookup network call.
+    record = _connector().build_record(ITEM)
     assert record is not None
     assert record.brand_name == "Optimum Nutrition"
     assert record.category == "whey"
@@ -41,12 +41,10 @@ async def test_extract_walmart_item():
     assert v.nutrition is None  # enriched later via Open Food Facts
 
 
-def test_marketplace_offers_skipped():
-    # Third-party marketplace offers carry a seller's price, not Walmart's
-    # buy-box price, so they must be excluded.
+def test_marketplace_offers_kept():
+    # Marketplace offers are kept (accurate price comes from the item lookup).
     c = _connector()
-    assert c._is_protein_powder({**ITEM, "marketplace": True}) is False
-    assert c._is_protein_powder({**ITEM, "marketplace": False}) is True
+    assert c._is_protein_powder({**ITEM, "marketplace": True}) is True
 
 
 def test_protein_filter_excludes_non_powder():
