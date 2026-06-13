@@ -27,6 +27,9 @@ async def test_extract_walmart_item():
     assert record is not None
     assert record.brand_name == "Optimum Nutrition"
     assert record.category == "whey"
+    # Without a publisher id, link to the direct product URL (not the affiliate
+    # tracking URL, which carries a |PUBID| placeholder).
+    assert record.url == "https://www.walmart.com/ip/12345678"
     assert len(record.variants) == 1
 
     v = record.variants[0]

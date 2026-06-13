@@ -109,11 +109,15 @@ class WalmartConnector(Connector):
         brand = str(item.get("brandName") or "Unknown")
         upc = item.get("upc")
         msrp = to_cents(item.get("msrp"))
-        url = (
-            item.get("productTrackingUrl")
-            or item.get("productUrl")
-            or f"https://www.walmart.com/ip/{item_id}"
-        )
+        # productTrackingUrl is an affiliate link with a literal "|PUBID|"
+        # placeholder that only works once an Impact publisher id is set. Use the
+        # direct product URL for working links; use tracking only if configured.
+        publisher_id = get_settings().walmart_publisher_id
+        tracking = item.get("productTrackingUrl")
+        if publisher_id and tracking:
+            url = tracking.replace("|PUBID|", publisher_id)
+        else:
+            url = f"https://www.walmart.com/ip/{item_id}"
         in_stock = bool(item.get("availableOnline", True)) and (
             str(item.get("stock", "Available")).lower() != "not available"
         )
