@@ -38,15 +38,21 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
           </h2>
           <dl className="grid grid-cols-2 gap-y-2 text-sm">
             <Fact label="Serving size" value={best.servingSizeG != null ? `${best.servingSizeG} g` : "—"} />
-            <Fact label="Servings/tub" value={best.servingsPerContainer?.toString() ?? "—"} />
             <Fact label="Protein" value={best.proteinG != null ? `${best.proteinG} g` : "—"} />
             <Fact label="Calories" value={best.caloriesKcal != null ? `${best.caloriesKcal}` : "—"} />
             <Fact label="Fat" value={best.fatG != null ? `${best.fatG} g` : "—"} />
             <Fact label="Carbs" value={best.carbG != null ? `${best.carbG} g` : "—"} />
           </dl>
-          <p className="mt-3 text-xs text-neutral-400">
-            Data confidence: {(best.confidence * 100).toFixed(0)}%
-          </p>
+          <div className="mt-3 flex items-center justify-between border-t border-neutral-100 pt-3 text-xs text-neutral-500">
+            <span>
+              {best.servingsPerContainer != null
+                ? `≈ ${best.servingsPerContainer} servings per container`
+                : "Servings per container unknown"}
+            </span>
+            <span className="text-neutral-400">
+              {(best.confidence * 100).toFixed(0)}% confidence
+            </span>
+          </div>
         </section>
 
         <section className="rounded-lg border border-neutral-200 bg-white p-4 md:col-span-2">

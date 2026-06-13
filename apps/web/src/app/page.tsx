@@ -57,7 +57,7 @@ export default async function HomePage({
                 <th className="px-3 py-2 text-right">Size</th>
                 <th className="px-3 py-2 text-right">{grouped ? "Best price" : "Price"}</th>
                 <th className="px-3 py-2 text-right">Protein/serv</th>
-                <th className="bg-brand-50 px-3 py-2 text-right font-semibold text-brand-700">
+                <th className="border-b-2 border-brand-500 bg-neutral-100 px-3 py-2 text-right font-semibold text-neutral-800">
                   {activeMetric.label}
                 </th>
                 <th className="px-3 py-2 text-right">Protein/$</th>
@@ -116,7 +116,7 @@ export default async function HomePage({
                     <td className="px-3 py-2 text-right text-neutral-600">
                       {r.proteinG != null ? `${r.proteinG} g` : "—"}
                     </td>
-                    <td className="bg-brand-50 px-3 py-2 text-right font-semibold text-brand-800">
+                    <td className="bg-neutral-50 px-3 py-2 text-right font-semibold text-neutral-900">
                       {activeMetric.format(numeric(r[activeMetric.field as keyof typeof r]))}
                     </td>
                     <td className="px-3 py-2 text-right text-neutral-600">

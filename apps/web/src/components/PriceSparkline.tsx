@@ -31,10 +31,16 @@ export function PriceSparkline({ points }: { points: { t: number; v: number }[] 
           <circle key={i} cx={c.x} cy={c.y} r={2.5} fill="#cf3f1a" />
         ))}
       </svg>
-      <div className="flex justify-between text-xs text-neutral-500">
-        <span>low ${(min / 100).toFixed(2)}</span>
-        <span className="font-medium text-neutral-700">now ${(latest / 100).toFixed(2)}</span>
-        <span>high ${(max / 100).toFixed(2)}</span>
+      <div className="mt-1 flex items-baseline gap-2">
+        <span className="text-base font-semibold text-neutral-900">
+          ${(latest / 100).toFixed(2)}
+        </span>
+        <span className="text-xs text-neutral-400">current</span>
+        {max !== min ? (
+          <span className="ml-2 text-xs text-neutral-500">
+            range ${(min / 100).toFixed(2)}–${(max / 100).toFixed(2)}
+          </span>
+        ) : null}
       </div>
     </div>
   );
