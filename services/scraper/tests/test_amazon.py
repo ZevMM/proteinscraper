@@ -47,14 +47,31 @@ def test_find_upc_from_product_information():
     assert AmazonConnector._find_upc({"product_information": {}}) is None
 
 
-def test_brand_from_info_and_byline():
-    assert (
-        AmazonConnector._brand({}, {"Brand": "NOW Sports"}) == "NOW Sports"
-    )
+def test_brand_prefers_consumer_brand_over_manufacturer():
+    assert AmazonConnector._brand({}, {"Brand": "NOW Sports"}) == "NOW Sports"
     assert (
         AmazonConnector._brand({"product_byline": "Visit the Dymatize Store"}, {})
         == "Dymatize"
     )
+    # Real case: prefer "Brand Name" (Optimum Nutrition) over "Manufacturer" (Glanbia).
+    assert (
+        AmazonConnector._brand(
+            {"product_byline": "Visit the Optimum Nutrition Store"},
+            {"Brand Name": "Optimum Nutrition", "Manufacturer": "Glanbia Performance Nutrition"},
+        )
+        == "Optimum Nutrition"
+    )
+
+
+def test_nutrition_from_product_information():
+    info = {"Protein": "24 Grams", "Total Servings Per Container": "29", "Serving Size": "32 g"}
+    n = AmazonConnector._nutrition_from_info(info)
+    assert n is not None
+    assert n.protein_g == 24
+    assert n.servings_per_container == 29
+    assert n.serving_size_g == 32
+    assert n.is_complete()
+    assert AmazonConnector._nutrition_from_info({"Color": "Blue"}) is None
 
 
 def test_protein_filter():

@@ -19,7 +19,7 @@ from urllib.parse import quote
 
 from ..categorize import classify_category
 from ..config import get_settings
-from ..models import ProductRecord, VariantRecord
+from ..models import ExtractionMethod, NutritionRecord, ProductRecord, VariantRecord
 from ..units import parse_weight_to_grams, to_cents
 from .base import Connector
 
@@ -122,6 +122,7 @@ class AmazonConnector(Connector):
         info = details.get("product_information") or {}
         brand = self._brand(details, info) or "Unknown"
         upc = self._find_upc(details)
+        nutrition = self._nutrition_from_info(info)
         original = to_cents(
             ref.get("product_original_price") or details.get("product_original_price")
         )
@@ -146,7 +147,9 @@ class AmazonConnector(Connector):
             in_stock=in_stock,
             upc=upc,
             compare_at_price_cents=original if original and original > price_cents else None,
-            nutrition=None,  # filled by Open Food Facts enrichment via UPC
+            # Amazon product_information often has protein + servings directly;
+            # OFF enrichment (by UPC) fills any that it doesn't.
+            nutrition=nutrition,
         )
         return ProductRecord(
             source_sku=asin,
@@ -161,12 +164,42 @@ class AmazonConnector(Connector):
 
     @staticmethod
     def _brand(details: dict[str, Any], info: dict[str, Any]) -> str | None:
-        for key in ("Brand", "Manufacturer"):
+        # Prefer the consumer brand ("Brand"/"Brand Name"/store byline) over the
+        # parent "Manufacturer" (e.g. Optimum Nutrition, not Glanbia) so it
+        # matches the brand other retailers use — critical for dedup.
+        for key in ("Brand", "Brand Name"):
             if info.get(key):
                 return str(info[key]).strip()
         byline = str(details.get("product_byline", ""))
         match = re.search(r"(?:brand:|visit the)\s*(.+?)(?:\s+store)?$", byline, re.IGNORECASE)
-        return match.group(1).strip() if match else None
+        if match:
+            return match.group(1).strip()
+        manufacturer = info.get("Manufacturer")
+        return str(manufacturer).strip() if manufacturer else None
+
+    @staticmethod
+    def _nutrition_from_info(info: dict[str, Any]) -> NutritionRecord | None:
+        """Extract per-serving nutrition from Amazon's product_information."""
+        def number(*keys: str) -> float | None:
+            for key in keys:
+                match = re.search(r"(\d+(?:\.\d+)?)", str(info.get(key, "")))
+                if match:
+                    return float(match.group(1))
+            return None
+
+        record = NutritionRecord(
+            protein_g=number("Protein"),
+            servings_per_container=number(
+                "Total Servings Per Container", "Servings Per Container"
+            ),
+            serving_size_g=parse_weight_to_grams(str(info.get("Serving Size", ""))),
+            fat_g=number("Total Fat", "Fat"),
+            carb_g=number("Total Carbohydrate", "Carbohydrate", "Total Carbohydrates"),
+            extraction_method=ExtractionMethod.html_parse,
+        )
+        if record.protein_g is None and record.servings_per_container is None:
+            return None
+        return record
 
     @staticmethod
     def _find_upc(details: dict[str, Any]) -> str | None:
