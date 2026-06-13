@@ -57,7 +57,7 @@ export default async function HomePage({
                 <th className="px-3 py-2 text-right">Size</th>
                 <th className="px-3 py-2 text-right">{grouped ? "Best price" : "Price"}</th>
                 <th className="px-3 py-2 text-right">Protein/serv</th>
-                <th className="bg-emerald-50 px-3 py-2 text-right font-semibold text-emerald-700">
+                <th className="bg-brand-50 px-3 py-2 text-right font-semibold text-brand-700">
                   {activeMetric.label}
                 </th>
                 <th className="px-3 py-2 text-right">Protein/$</th>
@@ -77,7 +77,7 @@ export default async function HomePage({
                     <td className="px-3 py-2">
                       <Link
                         href={`/product/${r.productId}`}
-                        className="font-medium text-neutral-900 hover:text-emerald-700 hover:underline"
+                        className="font-medium text-neutral-900 hover:text-brand-700 hover:underline"
                       >
                         {r.productName}
                       </Link>
@@ -116,7 +116,7 @@ export default async function HomePage({
                     <td className="px-3 py-2 text-right text-neutral-600">
                       {r.proteinG != null ? `${r.proteinG} g` : "—"}
                     </td>
-                    <td className="bg-emerald-50 px-3 py-2 text-right font-semibold text-emerald-800">
+                    <td className="bg-brand-50 px-3 py-2 text-right font-semibold text-brand-800">
                       {activeMetric.format(numeric(r[activeMetric.field as keyof typeof r]))}
                     </td>
                     <td className="px-3 py-2 text-right text-neutral-600">

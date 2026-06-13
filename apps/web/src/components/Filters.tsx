@@ -132,7 +132,7 @@ export function FilterBar({ filters, facets }: { filters: Filters; facets: Facet
       <div className="col-span-2 flex items-end gap-2 lg:col-span-2">
         <button
           type="submit"
-          className="rounded bg-emerald-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-emerald-700"
+          className="rounded bg-brand-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-brand-700"
         >
           Apply
         </button>

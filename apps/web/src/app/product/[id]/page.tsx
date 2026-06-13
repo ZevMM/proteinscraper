@@ -19,7 +19,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 
   return (
     <div className="flex flex-col gap-6">
-      <Link href="/" className="text-sm text-emerald-700 hover:underline">
+      <Link href="/" className="text-sm text-brand-700 hover:underline">
         ← Back to comparison
       </Link>
 
@@ -97,7 +97,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                     href={r.url}
                     target="_blank"
                     rel="noopener noreferrer nofollow"
-                    className="text-emerald-700 hover:underline"
+                    className="text-brand-700 hover:underline"
                   >
                     View ↗
                   </a>

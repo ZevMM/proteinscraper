@@ -25,10 +25,10 @@ export function PriceSparkline({ points }: { points: { t: number; v: number }[] 
     <div>
       <svg viewBox={`0 0 ${width} ${height}`} className="h-16 w-full" preserveAspectRatio="none">
         {sorted.length > 1 && (
-          <path d={path} fill="none" stroke="#059669" strokeWidth={2} />
+          <path d={path} fill="none" stroke="#cf3f1a" strokeWidth={2} />
         )}
         {coords.map((c, i) => (
-          <circle key={i} cx={c.x} cy={c.y} r={2.5} fill="#059669" />
+          <circle key={i} cx={c.x} cy={c.y} r={2.5} fill="#cf3f1a" />
         ))}
       </svg>
       <div className="flex justify-between text-xs text-neutral-500">
