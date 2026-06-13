@@ -60,3 +60,12 @@ def test_negative_value_rejected():
     record.fat_g = -1
     result = validate_nutrition(record)
     assert not result.ok
+
+
+def test_sub_one_serving_rejected():
+    # The Walmart/OFF bug produced servings < 1 from a mis-parsed container size.
+    record = _good()
+    record.servings_per_container = 0.8
+    result = validate_nutrition(record)
+    assert not result.ok
+    assert any("below 1" in e for e in result.errors)

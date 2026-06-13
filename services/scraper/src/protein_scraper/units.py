@@ -55,6 +55,49 @@ def parse_weight_to_grams(text: str | None) -> float | None:
     return round(float(raw_value) * factor, 3)
 
 
+_CONTAINER_UNITS = {"lb", "lbs", "pound", "pounds", "kg", "kgs", "kilogram",
+                    "kilograms", "oz", "ounce", "ounces"}
+# A plausible powder container is at least this many grams; smaller gram values
+# in a title are almost always a serving/protein claim ("30g protein").
+_MIN_CONTAINER_G = 300.0
+
+
+def parse_container_size_grams(text: str | None) -> float | None:
+    """Extract the container net weight from a noisy retailer title.
+
+    Titles often contain both a protein claim ("30g") and the real size ("5 lb").
+    Prefer pound/kg/oz tokens (the container); fall back to gram tokens only when
+    they are large enough to plausibly be a container. Returns None if unsure.
+    """
+    if not text:
+        return None
+    container: list[float] = []
+    grams: list[float] = []
+    for match in _WEIGHT_RE.finditer(text):
+        value = float(match.group("value").replace(",", "."))
+        unit = match.group("unit").lower()
+        factor = next((f for u, f in _WEIGHT_UNITS if u == unit), None)
+        if factor is None:
+            continue
+        weight = value * factor
+        (container if unit in _CONTAINER_UNITS else grams).append(weight)
+    if container:
+        return round(max(container), 3)
+    plausible = [g for g in grams if g >= _MIN_CONTAINER_G]
+    return round(max(plausible), 3) if plausible else None
+
+
+_MULTIPACK_RE = re.compile(
+    r"\bpack of\s*\d+|\b\d+\s*[-\s]?pack\b|\btwin pack\b|\bcase of\s*\d+|\bbundle\b",
+    re.IGNORECASE,
+)
+
+
+def is_multipack(text: str | None) -> bool:
+    """True if a title looks like a multi-unit pack (distorts per-unit metrics)."""
+    return bool(text and _MULTIPACK_RE.search(text))
+
+
 _SERVINGS_RE = re.compile(r"(\d+(?:\.\d+)?)\s*servings?\b", re.IGNORECASE)
 
 

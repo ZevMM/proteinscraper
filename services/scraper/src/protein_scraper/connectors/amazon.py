@@ -20,7 +20,7 @@ from urllib.parse import quote
 from ..categorize import classify_category
 from ..config import get_settings
 from ..models import ExtractionMethod, NutritionRecord, ProductRecord, VariantRecord
-from ..units import parse_weight_to_grams, to_cents
+from ..units import is_multipack, parse_container_size_grams, parse_weight_to_grams, to_cents
 from .base import Connector
 
 logger = logging.getLogger(__name__)
@@ -94,7 +94,10 @@ class AmazonConnector(Connector):
 
     @staticmethod
     def _is_protein_powder(product: dict[str, Any]) -> bool:
-        title = str(product.get("product_title", "")).lower()
+        raw_title = str(product.get("product_title", ""))
+        if is_multipack(raw_title):
+            return False
+        title = raw_title.lower()
         if "protein" not in title:
             return False
         return not any(word in title for word in _EXCLUDE)
@@ -126,9 +129,9 @@ class AmazonConnector(Connector):
         original = to_cents(
             ref.get("product_original_price") or details.get("product_original_price")
         )
-        size_g = parse_weight_to_grams(str(info.get("Item Weight", ""))) or parse_weight_to_grams(
-            title
-        )
+        size_g = parse_weight_to_grams(
+            str(info.get("Item Weight", ""))
+        ) or parse_container_size_grams(title)
         url = (
             details.get("product_url")
             or ref.get("product_url")

@@ -72,6 +72,11 @@ def validate_nutrition(n: NutritionRecord, *, size_g: float | None = None) -> Va
             f"protein_g ({n.protein_g}) exceeds serving_size_g ({n.serving_size_g})"
         )
 
+    # A real container has at least one serving; < 1 means the serving math is
+    # broken (usually a bad container size), so reject rather than store garbage.
+    if n.servings_per_container is not None and n.servings_per_container < 1:
+        errors.append(f"servings_per_container ({n.servings_per_container}) is below 1")
+
     # --- Soft sanity checks (reduce confidence, don't reject) --------------
     if n.serving_size_g is not None and not (
         SERVING_SIZE_MIN_G <= n.serving_size_g <= SERVING_SIZE_MAX_G

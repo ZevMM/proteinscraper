@@ -2,6 +2,8 @@ import math
 
 from protein_scraper.units import (
     clean_flavor,
+    is_multipack,
+    parse_container_size_grams,
     parse_servings,
     parse_weight_to_grams,
     to_cents,
@@ -50,3 +52,24 @@ def test_clean_flavor():
     assert clean_flavor("Default Title") is None
     assert clean_flavor("  Chocolate  ") == "Chocolate"
     assert clean_flavor(None) is None
+
+
+def test_container_size_ignores_protein_claim():
+    # The "30g" is a protein claim; the real container is 5 lb.
+    assert _close(
+        parse_container_size_grams("OWYN Pro Elite 30g High Protein Powder, 5 lb"),
+        2267.96,
+        tol=1,
+    )
+    # Pure grams only count when large enough to be a container.
+    assert _close(parse_container_size_grams("Naked Whey 907 g"), 907.0)
+    assert parse_container_size_grams("Whey Protein 25g per serving") is None
+    # Picks the largest container token across size variants.
+    assert _close(parse_container_size_grams("ISO100 1.6 lb / 5 lb"), 2267.96, tol=1)
+
+
+def test_is_multipack():
+    assert is_multipack("Dymatize ISO100 5 lb (Pack of 2)")
+    assert is_multipack("Whey Protein 2-Pack")
+    assert is_multipack("Protein Bundle")
+    assert not is_multipack("Optimum Gold Standard Whey 5 lb")

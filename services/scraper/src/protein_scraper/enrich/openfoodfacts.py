@@ -56,7 +56,9 @@ def parse_off_product(product: dict[str, Any], size_g: float | None) -> Nutritio
     product_qty = _to_float(product.get("product_quantity"))
     if product_qty and serving_g:
         servings = round(product_qty / serving_g, 1)
-    elif size_g and serving_g:
+    elif size_g and size_g >= 300 and serving_g:
+        # Only trust our known container size if it's plausibly a container
+        # (avoids deriving servings from a mis-parsed tiny size).
         servings = round(size_g / serving_g, 1)
 
     record = NutritionRecord(

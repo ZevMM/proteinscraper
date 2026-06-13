@@ -16,7 +16,7 @@ from urllib.parse import quote
 from ..categorize import classify_category
 from ..config import get_settings
 from ..models import ProductRecord, VariantRecord
-from ..units import parse_weight_to_grams, to_cents
+from ..units import is_multipack, parse_container_size_grams, to_cents
 from ..walmart_auth import build_auth_headers
 from .base import Connector
 
@@ -84,7 +84,10 @@ class WalmartConnector(Connector):
 
     @staticmethod
     def _is_protein_powder(item: dict[str, Any]) -> bool:
-        text = f"{item.get('name', '')} {item.get('categoryPath', '')}".lower()
+        name = str(item.get("name", ""))
+        if is_multipack(name):
+            return False
+        text = f"{name} {item.get('categoryPath', '')}".lower()
         if "protein" not in text:
             return False
         return not any(word in text for word in _EXCLUDE)
@@ -108,7 +111,7 @@ class WalmartConnector(Connector):
         in_stock = bool(item.get("availableOnline", True)) and (
             str(item.get("stock", "Available")).lower() != "not available"
         )
-        size_g = parse_weight_to_grams(name)
+        size_g = parse_container_size_grams(name)
 
         variant = VariantRecord(
             source_variant_id=item_id,
