@@ -16,6 +16,7 @@ class ExtractionMethod(StrEnum):
     html_parse = "html_parse"
     llm = "llm"
     manual = "manual"
+    open_food_facts = "open_food_facts"
 
 
 class NutritionRecord(BaseModel):
@@ -51,6 +52,8 @@ class VariantRecord(BaseModel):
     price_cents: int
     currency: str = "USD"
     in_stock: bool = True
+    upc: str | None = None
+    compare_at_price_cents: int | None = None
     nutrition: NutritionRecord | None = None
 
 

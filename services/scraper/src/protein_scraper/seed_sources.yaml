@@ -133,3 +133,17 @@ sources:
     base_url: https://axeandsledge.com
     config:
       max_pages: 3
+
+  # Walmart via the official IO Affiliate API. No-ops until WALMART_CONSUMER_ID +
+  # WALMART_PRIVATE_KEY (+ WALMART_KEY_VERSION) are set in the environment.
+  - slug: walmart
+    name: Walmart
+    type: walmart
+    base_url: https://www.walmart.com
+    config:
+      max_pages: 4
+      queries:
+        - whey protein powder
+        - plant protein powder
+        - casein protein powder
+        - protein isolate powder

@@ -22,6 +22,9 @@ jobs:
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      WALMART_CONSUMER_ID: ${{ secrets.WALMART_CONSUMER_ID }}
+      WALMART_PRIVATE_KEY: ${{ secrets.WALMART_PRIVATE_KEY }}
+      WALMART_KEY_VERSION: ${{ secrets.WALMART_KEY_VERSION }}
     steps:
       - uses: actions/checkout@v4
 
@@ -51,3 +54,6 @@ jobs:
           else
             uv run scraper run --all -v
           fi
+      - name: Enrich nutrition via Open Food Facts (by UPC)
+        working-directory: services/scraper
+        run: uv run scraper enrich -v

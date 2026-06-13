@@ -8,7 +8,8 @@ from typing import Any
 
 from .config import Settings, get_settings
 from .connectors import get_connector
-from .db import Repository, create_engine, slugify
+from .db import Repository, create_engine
+from .enrich.openfoodfacts import fetch_off_product, parse_off_product
 from .extract.llm import LlmExtractor
 from .http import Fetcher
 from .models import ProductRecord
@@ -40,12 +41,21 @@ class PipelineStats:
 def persist_product(repo: Repository, source_id: str, record: ProductRecord) -> PipelineStats:
     """Write one extracted product (and its variants/prices/nutrition) to the DB."""
     stats = PipelineStats()
-    brand_slug = slugify(record.brand_name)
     brand_id = repo.get_or_create_brand(record.brand_name)
-    product_id = repo.get_or_create_product(
-        brand_id=brand_id, brand_slug=brand_slug, name=record.product_name,
-        category=record.category,
-    )
+
+    # Cross-source dedup: prefer merging onto an existing product that shares a
+    # UPC; otherwise fall back to the canonical brand+name key.
+    product_id: str | None = None
+    for variant in record.variants:
+        if variant.upc:
+            product_id = repo.find_product_by_upc(variant.upc)
+            if product_id:
+                break
+    if product_id is None:
+        product_id = repo.get_or_create_product(
+            brand_id=brand_id, brand_name=record.brand_name, name=record.product_name,
+            category=record.category,
+        )
     listing_id = repo.upsert_listing(
         source_id=source_id, product_id=product_id, url=record.url,
         source_sku=record.source_sku, title=record.title, raw_payload=record.raw_payload,
@@ -144,3 +154,48 @@ async def run(slugs: list[str] | None = None, settings: Settings | None = None) 
         for source in sources:
             overall.merge(await run_source(repo, source, fetcher, llm))
     return overall
+
+
+@dataclass
+class EnrichStats:
+    checked: int = 0
+    enriched: int = 0
+    issues: int = 0
+
+
+async def enrich(settings: Settings | None = None) -> EnrichStats:
+    """Fill missing nutrition for variants that have a UPC, via Open Food Facts."""
+    settings = settings or get_settings()
+    repo = Repository(create_engine(settings.database_url))
+    stats = EnrichStats()
+    rows = repo.variants_missing_nutrition_with_upc()
+    logger.info("enrichment: %d variants with a UPC and no nutrition", len(rows))
+
+    async with Fetcher(settings) as fetcher:
+        for row in rows:
+            stats.checked += 1
+            variant_id, upc, size_g = str(row["id"]), row["upc"], row["sizeG"]
+            try:
+                product = await fetch_off_product(fetcher, upc)
+            except Exception as exc:
+                logger.warning("OFF fetch failed for %s: %s", upc, exc)
+                continue
+            if product is None:
+                continue
+            record = parse_off_product(product, size_g)
+            if record is None:
+                continue
+            result = validate_nutrition(record, size_g=size_g)
+            if result.ok:
+                repo.upsert_nutrition(
+                    variant_id=variant_id, n=record, confidence=result.confidence
+                )
+                stats.enriched += 1
+            else:
+                repo.record_issue(
+                    stage="validate", severity="warning",
+                    message="OFF enrichment: " + "; ".join(result.errors),
+                    payload=record.model_dump(mode="json"),
+                )
+                stats.issues += 1
+    return stats

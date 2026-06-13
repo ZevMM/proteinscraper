@@ -10,10 +10,12 @@ from ..http import Fetcher
 from .base import Connector
 from .jsonld import JsonLdConnector
 from .shopify import ShopifyConnector
+from .walmart import WalmartConnector
 
 _REGISTRY: dict[str, type[Connector]] = {
     ShopifyConnector.source_type: ShopifyConnector,
     JsonLdConnector.source_type: JsonLdConnector,
+    WalmartConnector.source_type: WalmartConnector,
 }
 
 
@@ -29,4 +31,10 @@ def get_connector(
     return cls(source, fetcher, llm)
 
 
-__all__ = ["Connector", "JsonLdConnector", "ShopifyConnector", "get_connector"]
+__all__ = [
+    "Connector",
+    "JsonLdConnector",
+    "ShopifyConnector",
+    "WalmartConnector",
+    "get_connector",
+]

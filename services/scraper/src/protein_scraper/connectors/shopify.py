@@ -140,6 +140,9 @@ class ShopifyConnector(Connector):
                 or parse_weight_to_grams(variant.get("title"))
                 or (float(variant["grams"]) if variant.get("grams") else None)
             )
+            compare_at = to_cents(variant.get("compare_at_price"))
+            # Only a genuine markdown (compare_at above the live price).
+            on_sale = compare_at if compare_at and compare_at > price_cents else None
             variants.append(
                 VariantRecord(
                     source_variant_id=str(variant["id"]),
@@ -149,6 +152,7 @@ class ShopifyConnector(Connector):
                     price_cents=price_cents,
                     currency="USD",
                     in_stock=bool(variant.get("available", True)),
+                    compare_at_price_cents=on_sale,
                     nutrition=self._variant_nutrition(nutrition, product, variant, size_g),
                 )
             )

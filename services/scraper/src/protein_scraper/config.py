@@ -21,9 +21,26 @@ class Settings(BaseSettings):
     scraper_requests_per_second: float = 1.0
     scraper_cache_dir: str = ".cache"
 
+    # Walmart IO Affiliate API (digital-signature auth).
+    walmart_consumer_id: str = ""
+    # PEM-encoded RSA private key registered with Walmart. Newlines may be
+    # provided literally or as "\n" (normalized in walmart_private_key_pem).
+    walmart_private_key: str = ""
+    walmart_key_version: str = "1"
+    walmart_publisher_id: str = ""
+
     @property
     def llm_enabled(self) -> bool:
         return bool(self.anthropic_api_key.strip())
+
+    @property
+    def walmart_private_key_pem(self) -> str:
+        # Allow the key to be supplied as a single line with escaped newlines.
+        return self.walmart_private_key.replace("\\n", "\n")
+
+    @property
+    def walmart_enabled(self) -> bool:
+        return bool(self.walmart_consumer_id.strip() and self.walmart_private_key.strip())
 
 
 _settings: Settings | None = None

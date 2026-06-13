@@ -59,19 +59,19 @@ class Fetcher:
         stop=stop_after_attempt(3),
         reraise=True,
     )
-    async def _get(self, url: str) -> str:
+    async def _get(self, url: str, headers: dict[str, str] | None = None) -> str:
         host = httpx.URL(url).host or ""
         await self._limiter.wait(host)
-        resp = await self._client.get(url)
+        resp = await self._client.get(url, headers=headers)
         resp.raise_for_status()
         return resp.text
 
-    async def get_text(self, url: str) -> str:
+    async def get_text(self, url: str, headers: dict[str, str] | None = None) -> str:
         if self._cache is not None:
             cached = self._cache.get(url)
             if cached is not None:
                 return cached
-        text = await self._get(url)
+        text = await self._get(url, headers)
         if self._cache is not None:
             self._cache.set(url, text)
         return text

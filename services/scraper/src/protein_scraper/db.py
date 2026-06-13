@@ -10,7 +10,6 @@ default — every write here sets ``updatedAt`` explicitly.
 
 from __future__ import annotations
 
-import re
 from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
@@ -20,7 +19,10 @@ from sqlalchemy.dialects.postgresql import ENUM, JSONB, UUID
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.engine import Engine
 
+from .identity import normalize_brand, product_dedup_key, slugify
 from .models import NutritionRecord, VariantRecord
+
+__all__ = ["Repository", "create_engine", "slugify", "to_sqlalchemy_url"]
 
 metadata = sa.MetaData()
 
@@ -90,6 +92,8 @@ variants = sa.Table(
     sa.Column("sizeG", sa.Float),
     sa.Column("sizeLabel", sa.Text),
     sa.Column("sourceVariantId", sa.Text, nullable=False),
+    sa.Column("upc", sa.Text),
+    sa.Column("compareAtPriceCents", sa.Integer),
 )
 
 nutrition = sa.Table(
@@ -156,10 +160,6 @@ def create_engine(database_url: str) -> Engine:
     return sa.create_engine(to_sqlalchemy_url(database_url), future=True, pool_pre_ping=True)
 
 
-def slugify(value: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
-
-
 class Repository:
     """Idempotent writer for the catalog tables."""
 
@@ -202,7 +202,9 @@ class Repository:
 
     # -- Catalog upserts ---------------------------------------------------
     def get_or_create_brand(self, name: str) -> str:
-        slug = slugify(name)
+        # Normalize so the same brand across sources (e.g. "ON" vs "Optimum
+        # Nutrition") collapses to one row.
+        slug = slugify(normalize_brand(name))
         stmt = (
             pg_insert(brands)
             .values(slug=slug, name=name, updatedAt=_utcnow())
@@ -216,9 +218,9 @@ class Repository:
             return str(conn.execute(stmt).scalar_one())
 
     def get_or_create_product(
-        self, *, brand_id: str, brand_slug: str, name: str, category: str | None
+        self, *, brand_id: str, brand_name: str, name: str, category: str | None
     ) -> str:
-        dedup_key = f"{brand_slug}:{slugify(name)}"
+        dedup_key = product_dedup_key(brand_name, name)
         stmt = (
             pg_insert(products)
             .values(brandId=brand_id, name=name, category=category,
@@ -251,19 +253,54 @@ class Repository:
             return str(conn.execute(stmt).scalar_one())
 
     def upsert_variant(self, *, listing_id: str, variant: VariantRecord) -> str:
+        values = {
+            "listingId": listing_id,
+            "flavor": variant.flavor,
+            "sizeG": variant.size_g,
+            "sizeLabel": variant.size_label,
+            "sourceVariantId": variant.source_variant_id,
+            "upc": variant.upc,
+            "compareAtPriceCents": variant.compare_at_price_cents,
+        }
+        update = {k: v for k, v in values.items() if k not in ("listingId", "sourceVariantId")}
         stmt = (
             pg_insert(variants)
-            .values(listingId=listing_id, flavor=variant.flavor, sizeG=variant.size_g,
-                    sizeLabel=variant.size_label, sourceVariantId=variant.source_variant_id)
+            .values(**values)
             .on_conflict_do_update(
                 index_elements=[variants.c.listingId, variants.c.sourceVariantId],
-                set_={"flavor": variant.flavor, "sizeG": variant.size_g,
-                      "sizeLabel": variant.size_label},
+                set_=update,
             )
             .returning(variants.c.id)
         )
         with self.engine.begin() as conn:
             return str(conn.execute(stmt).scalar_one())
+
+    def find_product_by_upc(self, upc: str) -> str | None:
+        """Return the product id of an existing variant with this UPC, if any.
+
+        Lets the pipeline merge the same product across sources by barcode.
+        """
+        stmt = (
+            sa.select(listings.c.productId)
+            .select_from(variants.join(listings, listings.c.id == variants.c.listingId))
+            .where(variants.c.upc == upc)
+            .limit(1)
+        )
+        with self.engine.connect() as conn:
+            result = conn.execute(stmt).scalar_one_or_none()
+        return str(result) if result else None
+
+    def variants_missing_nutrition_with_upc(self, limit: int = 1000) -> list[dict[str, Any]]:
+        """Variants that have a UPC but no nutrition row yet — candidates for
+        Open Food Facts enrichment."""
+        stmt = (
+            sa.select(variants.c.id, variants.c.upc, variants.c.sizeG)
+            .select_from(variants.outerjoin(nutrition, nutrition.c.variantId == variants.c.id))
+            .where(variants.c.upc.isnot(None), nutrition.c.id.is_(None))
+            .limit(limit)
+        )
+        with self.engine.connect() as conn:
+            return [dict(r) for r in conn.execute(stmt).mappings().all()]
 
     def upsert_nutrition(self, *, variant_id: str, n: NutritionRecord, confidence: float) -> None:
         values = {

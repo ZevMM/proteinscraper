@@ -82,5 +82,17 @@ def run(
         console.print(f"[red]{err}[/red]")
 
 
+@app.command()
+def enrich(verbose: bool = typer.Option(False, "--verbose", "-v")) -> None:
+    """Fill missing nutrition via Open Food Facts (for variants with a UPC)."""
+    _setup_logging(verbose)
+    stats = asyncio.run(pipeline.enrich())
+    table = Table("metric", "count")
+    table.add_row("variants checked", str(stats.checked))
+    table.add_row("nutrition enriched", str(stats.enriched))
+    table.add_row("issues flagged", str(stats.issues))
+    console.print(table)
+
+
 if __name__ == "__main__":
     app()
