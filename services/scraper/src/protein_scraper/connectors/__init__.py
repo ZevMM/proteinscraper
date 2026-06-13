@@ -7,6 +7,7 @@ from typing import Any
 
 from ..extract.llm import LlmExtractor
 from ..http import Fetcher
+from .amazon import AmazonConnector
 from .base import Connector
 from .jsonld import JsonLdConnector
 from .shopify import ShopifyConnector
@@ -16,6 +17,7 @@ _REGISTRY: dict[str, type[Connector]] = {
     ShopifyConnector.source_type: ShopifyConnector,
     JsonLdConnector.source_type: JsonLdConnector,
     WalmartConnector.source_type: WalmartConnector,
+    AmazonConnector.source_type: AmazonConnector,
 }
 
 
@@ -32,6 +34,7 @@ def get_connector(
 
 
 __all__ = [
+    "AmazonConnector",
     "Connector",
     "JsonLdConnector",
     "ShopifyConnector",

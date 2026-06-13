@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     scraper_requests_per_second: float = 1.0
     scraper_cache_dir: str = ".cache"
 
+    # RapidAPI key for the "Real-Time Amazon Data" provider (Amazon connector).
+    rapidapi_key: str = ""
+
     # Walmart IO Affiliate API (digital-signature auth).
     walmart_consumer_id: str = ""
     # PEM-encoded RSA private key registered with Walmart. Newlines may be
@@ -32,6 +35,10 @@ class Settings(BaseSettings):
     @property
     def llm_enabled(self) -> bool:
         return bool(self.anthropic_api_key.strip())
+
+    @property
+    def amazon_enabled(self) -> bool:
+        return bool(self.rapidapi_key.strip())
 
     @property
     def walmart_private_key_pem(self) -> str:

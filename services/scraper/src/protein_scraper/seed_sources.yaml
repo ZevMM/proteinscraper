@@ -147,3 +147,21 @@ sources:
         - plant protein powder
         - casein protein powder
         - protein isolate powder
+
+  # Amazon via the RapidAPI "Real-Time Amazon Data" provider. enabled:false keeps
+  # it out of the daily --all run; a separate weekly workflow runs it explicitly
+  # (it bills per request). No-ops until RAPIDAPI_KEY is set.
+  - slug: amazon
+    name: Amazon
+    type: amazon
+    base_url: https://www.amazon.com
+    enabled: false
+    config:
+      max_pages: 3
+      country: US
+      fetch_details: true
+      queries:
+        - whey protein powder
+        - plant protein powder
+        - casein protein powder
+        - protein isolate powder

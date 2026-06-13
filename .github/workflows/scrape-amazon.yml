@@ -1,0 +1,37 @@
+name: Weekly Amazon scrape
+
+on:
+  schedule:
+    # Mondays 10:00 UTC. Amazon bills per request, so weekly (not daily).
+    - cron: "0 10 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: scrape-amazon
+  cancel-in-progress: false
+
+jobs:
+  amazon:
+    name: Amazon (RapidAPI) + enrich
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - name: Install scraper
+        working-directory: services/scraper
+        run: uv sync --frozen
+      - name: Seed sources (ensures the amazon source exists)
+        working-directory: services/scraper
+        run: uv run scraper seed
+      - name: Scrape Amazon
+        working-directory: services/scraper
+        run: uv run scraper run --source amazon -v
+      - name: Enrich nutrition via Open Food Facts (by UPC)
+        working-directory: services/scraper
+        run: uv run scraper enrich -v
