@@ -234,10 +234,11 @@ view ListingMetrics {
   sizeG       Float?  @map("size_g")
   url         String  @map("url")
 
-  priceCents Int      @map("price_cents")
-  currency   String   @map("currency")
-  inStock    Boolean  @map("in_stock")
-  capturedAt DateTime @map("captured_at")
+  priceCents          Int      @map("price_cents")
+  currency            String   @map("currency")
+  inStock             Boolean  @map("in_stock")
+  capturedAt          DateTime @map("captured_at")
+  compareAtPriceCents Int?     @map("compare_at_price_cents")
 
   servingSizeG         Float? @map("serving_size_g")
   servingsPerContainer Float? @map("servings_per_container")

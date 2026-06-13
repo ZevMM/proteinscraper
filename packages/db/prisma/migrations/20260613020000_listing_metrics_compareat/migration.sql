@@ -1,6 +1,6 @@
--- Derived comparison metrics, one row per variant, using the latest price
--- observation joined to the variant's nutrition facts.
--- DROP + CREATE (not CREATE OR REPLACE) so columns can be reordered freely.
+-- Add compare_at_price_cents (sale/MSRP) to listing_metrics for sale display.
+-- DROP + CREATE (not CREATE OR REPLACE) so columns can be reordered.
+-- Keep in sync with prisma/sql/listing_metrics.sql.
 
 DROP VIEW IF EXISTS listing_metrics;
 CREATE VIEW listing_metrics AS
@@ -42,7 +42,6 @@ SELECT
   n."caloriesKcal"          AS calories_kcal,
   COALESCE(n.confidence, 0) AS confidence,
 
-  -- Derived metrics ---------------------------------------------------------
   (n."servingsPerContainer" * n."proteinG")                       AS total_protein_g,
 
   CASE WHEN lp.price_cents > 0

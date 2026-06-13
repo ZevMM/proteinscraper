@@ -10,6 +10,15 @@ export function formatSize(grams: number | null | undefined): string {
   return `${Math.round(grams)} g`;
 }
 
+/** Percent off if compareAt is a genuine markdown above the current price. */
+export function salePercent(
+  priceCents: number,
+  compareAtCents: number | null | undefined,
+): number | null {
+  if (compareAtCents == null || compareAtCents <= priceCents) return null;
+  return Math.round((1 - priceCents / compareAtCents) * 100);
+}
+
 export function titleCase(value: string | null | undefined): string {
   if (!value) return "";
   return value

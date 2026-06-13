@@ -1,9 +1,15 @@
 import Link from "next/link";
 
 import { FilterBar } from "@/components/Filters";
-import { formatPrice, formatSize } from "@/lib/format";
+import { formatPrice, formatSize, salePercent } from "@/lib/format";
 import { METRICS } from "@/lib/metrics";
-import { getFacets, getListings, parseFilters } from "@/lib/queries";
+import {
+  getFacets,
+  getGroupedListings,
+  getListings,
+  parseFilters,
+  type GroupedListing,
+} from "@/lib/queries";
 
 // Always reflect the latest scraped prices.
 export const dynamic = "force-dynamic";
@@ -14,7 +20,11 @@ export default async function HomePage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const filters = parseFilters(await searchParams);
-  const [rows, facets] = await Promise.all([getListings(filters), getFacets()]);
+  const grouped = filters.view === "grouped";
+  const [rows, facets] = await Promise.all([
+    grouped ? getGroupedListings(filters) : getListings(filters),
+    getFacets(),
+  ]);
   const activeMetric = METRICS[filters.metric];
 
   return (
@@ -22,7 +32,8 @@ export default async function HomePage({
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Compare protein powders</h1>
         <p className="text-sm text-neutral-500">
-          Ranked by <span className="font-medium text-neutral-700">{activeMetric.label}</span>,{" "}
+          {grouped ? "One row per product, " : "Every offer, "}ranked by{" "}
+          <span className="font-medium text-neutral-700">{activeMetric.label}</span>,{" "}
           {filters.order === "best" ? "best" : "worst"} first.
         </p>
       </div>
@@ -42,9 +53,9 @@ export default async function HomePage({
               <tr className="border-b border-neutral-200 bg-neutral-50 text-left text-xs uppercase tracking-wide text-neutral-500">
                 <th className="px-3 py-2">#</th>
                 <th className="px-3 py-2">Product</th>
-                <th className="px-3 py-2">Retailer</th>
+                <th className="px-3 py-2">{grouped ? "Retailers" : "Retailer"}</th>
                 <th className="px-3 py-2 text-right">Size</th>
-                <th className="px-3 py-2 text-right">Price</th>
+                <th className="px-3 py-2 text-right">{grouped ? "Best price" : "Price"}</th>
                 <th className="px-3 py-2 text-right">Protein/serv</th>
                 <th className="bg-emerald-50 px-3 py-2 text-right font-semibold text-emerald-700">
                   {activeMetric.label}
@@ -54,42 +65,69 @@ export default async function HomePage({
               </tr>
             </thead>
             <tbody>
-              {rows.map((r, i) => (
-                <tr
-                  key={r.variantId}
-                  className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50"
-                >
-                  <td className="px-3 py-2 text-neutral-400">{i + 1}</td>
-                  <td className="px-3 py-2">
-                    <Link
-                      href={`/product/${r.productId}`}
-                      className="font-medium text-neutral-900 hover:text-emerald-700 hover:underline"
-                    >
-                      {r.productName}
-                    </Link>
-                    <div className="text-xs text-neutral-500">
-                      {r.brandName}
-                      {r.flavor ? ` · ${r.flavor}` : ""}
-                      {!r.inStock ? " · out of stock" : ""}
-                    </div>
-                  </td>
-                  <td className="px-3 py-2 text-neutral-600">{r.sourceSlug}</td>
-                  <td className="px-3 py-2 text-right text-neutral-600">{formatSize(r.sizeG)}</td>
-                  <td className="px-3 py-2 text-right font-medium">{formatPrice(r.priceCents)}</td>
-                  <td className="px-3 py-2 text-right text-neutral-600">
-                    {r.proteinG != null ? `${r.proteinG} g` : "—"}
-                  </td>
-                  <td className="bg-emerald-50 px-3 py-2 text-right font-semibold text-emerald-800">
-                    {activeMetric.format(numeric(r[activeMetric.field as keyof typeof r]))}
-                  </td>
-                  <td className="px-3 py-2 text-right text-neutral-600">
-                    {METRICS.proteinPerDollar.format(r.proteinPerDollar)}
-                  </td>
-                  <td className="px-3 py-2 text-right text-neutral-600">
-                    {METRICS.costPer30gProtein.format(r.costPer30gProtein)}
-                  </td>
-                </tr>
-              ))}
+              {rows.map((r, i) => {
+                const off = salePercent(r.priceCents, r.compareAtPriceCents);
+                const retailerCount = (r as GroupedListing).retailerCount;
+                return (
+                  <tr
+                    key={r.variantId}
+                    className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50"
+                  >
+                    <td className="px-3 py-2 text-neutral-400">{i + 1}</td>
+                    <td className="px-3 py-2">
+                      <Link
+                        href={`/product/${r.productId}`}
+                        className="font-medium text-neutral-900 hover:text-emerald-700 hover:underline"
+                      >
+                        {r.productName}
+                      </Link>
+                      <div className="text-xs text-neutral-500">
+                        {r.brandName}
+                        {r.flavor ? ` · ${r.flavor}` : ""}
+                        {!r.inStock ? " · out of stock" : ""}
+                      </div>
+                    </td>
+                    <td className="px-3 py-2 text-neutral-600">
+                      {grouped ? (
+                        <span title={`${(r as GroupedListing).offerCount} offers`}>
+                          {r.sourceSlug}
+                          {retailerCount > 1 ? (
+                            <span className="ml-1 rounded bg-neutral-100 px-1.5 py-0.5 text-xs text-neutral-600">
+                              +{retailerCount - 1} more
+                            </span>
+                          ) : null}
+                        </span>
+                      ) : (
+                        r.sourceSlug
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-right text-neutral-600">{formatSize(r.sizeG)}</td>
+                    <td className="px-3 py-2 text-right">
+                      <span className="font-medium">{formatPrice(r.priceCents)}</span>
+                      {off != null ? (
+                        <div className="text-xs">
+                          <span className="text-neutral-400 line-through">
+                            {formatPrice(r.compareAtPriceCents)}
+                          </span>{" "}
+                          <span className="font-medium text-rose-600">-{off}%</span>
+                        </div>
+                      ) : null}
+                    </td>
+                    <td className="px-3 py-2 text-right text-neutral-600">
+                      {r.proteinG != null ? `${r.proteinG} g` : "—"}
+                    </td>
+                    <td className="bg-emerald-50 px-3 py-2 text-right font-semibold text-emerald-800">
+                      {activeMetric.format(numeric(r[activeMetric.field as keyof typeof r]))}
+                    </td>
+                    <td className="px-3 py-2 text-right text-neutral-600">
+                      {METRICS.proteinPerDollar.format(r.proteinPerDollar)}
+                    </td>
+                    <td className="px-3 py-2 text-right text-neutral-600">
+                      {METRICS.costPer30gProtein.format(r.costPer30gProtein)}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

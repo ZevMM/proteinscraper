@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { PriceSparkline } from "@/components/PriceSparkline";
-import { formatPrice, formatSize } from "@/lib/format";
+import { formatPrice, formatSize, salePercent } from "@/lib/format";
 import { METRICS } from "@/lib/metrics";
 import { getProductDetail } from "@/lib/queries";
 
@@ -82,7 +82,14 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                 <td className="px-4 py-2 text-neutral-600">{r.sourceSlug}</td>
                 <td className="px-4 py-2">{r.flavor ?? "—"}</td>
                 <td className="px-4 py-2 text-right text-neutral-600">{formatSize(r.sizeG)}</td>
-                <td className="px-4 py-2 text-right font-medium">{formatPrice(r.priceCents)}</td>
+                <td className="px-4 py-2 text-right">
+                  <span className="font-medium">{formatPrice(r.priceCents)}</span>
+                  {salePercent(r.priceCents, r.compareAtPriceCents) != null ? (
+                    <span className="ml-1 text-xs font-medium text-rose-600">
+                      -{salePercent(r.priceCents, r.compareAtPriceCents)}%
+                    </span>
+                  ) : null}
+                </td>
                 <td className="px-4 py-2 text-right">{METRICS.proteinPerDollar.format(r.proteinPerDollar)}</td>
                 <td className="px-4 py-2 text-right">{METRICS.costPer30gProtein.format(r.costPer30gProtein)}</td>
                 <td className="px-4 py-2 text-right">

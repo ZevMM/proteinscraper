@@ -12,6 +12,8 @@ export interface Filters {
   metric: MetricKey;
   /** "best" = sort so the most desirable values come first. */
   order: "best" | "worst";
+  /** "grouped" = one row per product (best offer); "all" = every offer. */
+  view: "grouped" | "all";
 }
 
 type RawParams = Record<string, string | string[] | undefined>;
@@ -34,6 +36,7 @@ export function parseFilters(params: RawParams): Filters {
     minProtein: minProtein ? Number(minProtein) : undefined,
     metric: isMetricKey(metricParam) ? metricParam : DEFAULT_METRIC,
     order: first(params.order) === "worst" ? "worst" : "best",
+    view: first(params.view) === "all" ? "all" : "grouped",
   };
 }
 
@@ -76,6 +79,40 @@ export function buildQuery(filters: Filters): {
 export async function getListings(filters: Filters, take = 200): Promise<ListingMetrics[]> {
   const { where, orderBy } = buildQuery(filters);
   return prisma.listingMetrics.findMany({ where, orderBy, take });
+}
+
+export type GroupedListing = ListingMetrics & {
+  retailerCount: number;
+  offerCount: number;
+};
+
+/**
+ * One row per product: its best offer for the selected metric, plus how many
+ * retailers/offers carry it. Rows come back already sorted best-first, so the
+ * first time a product is seen is its best offer (and products stay best-first).
+ */
+export async function getGroupedListings(filters: Filters, take = 200): Promise<GroupedListing[]> {
+  const { where, orderBy } = buildQuery(filters);
+  const rows = await prisma.listingMetrics.findMany({ where, orderBy, take: 2000 });
+
+  const byProduct = new Map<string, { best: ListingMetrics; retailers: Set<string>; offers: number }>();
+  for (const row of rows) {
+    const existing = byProduct.get(row.productId);
+    if (!existing) {
+      byProduct.set(row.productId, {
+        best: row,
+        retailers: new Set([row.sourceSlug]),
+        offers: 1,
+      });
+    } else {
+      existing.retailers.add(row.sourceSlug);
+      existing.offers += 1;
+    }
+  }
+
+  return [...byProduct.values()]
+    .slice(0, take)
+    .map((g) => ({ ...g.best, retailerCount: g.retailers.size, offerCount: g.offers }));
 }
 
 export interface Facets {
