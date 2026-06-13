@@ -5,18 +5,18 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Blood-orange brand palette.
+        // Bright blood-orange brand palette (primary ~ rgb(245 76 32)).
         brand: {
-          50: "#fef3ee",
-          100: "#fde0d2",
-          200: "#fabfa4",
-          300: "#f5966d",
-          400: "#ee6a3c",
-          500: "#e44a1f",
-          600: "#cf3f1a", // primary
-          700: "#ad3216",
-          800: "#8a2917",
-          900: "#722416",
+          50: "#fff3ef",
+          100: "#ffe4db",
+          200: "#ffc7b6",
+          300: "#fda286",
+          400: "#fb7650",
+          500: "#f95a2e",
+          600: "#f54c20", // primary
+          700: "#d33c14",
+          800: "#a83014",
+          900: "#882a16",
         },
       },
     },
