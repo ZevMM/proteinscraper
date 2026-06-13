@@ -91,6 +91,10 @@ class WalmartConnector(Connector):
     @staticmethod
     def _is_protein_powder(item: dict[str, Any]) -> bool:
         name = str(item.get("name", ""))
+        # Skip third-party marketplace offers: their price is the seller's, not
+        # Walmart's buy-box price, so it won't match the listing the user sees.
+        if item.get("marketplace") is True:
+            return False
         if is_multipack(name):
             return False
         text = f"{name} {item.get('categoryPath', '')}".lower()
@@ -108,6 +112,7 @@ class WalmartConnector(Connector):
         name = str(item.get("name") or item_id)
         brand = str(item.get("brandName") or "Unknown")
         upc = item.get("upc")
+        msrp = to_cents(item.get("msrp"))
         # productTrackingUrl is an affiliate link with a literal "|PUBID|"
         # placeholder that only works once an Impact publisher id is set. Use the
         # direct product URL for working links; use tracking only if configured.
@@ -131,9 +136,7 @@ class WalmartConnector(Connector):
             currency="USD",
             in_stock=in_stock,
             upc=str(upc) if upc else None,
-            # Walmart's msrp is a list price, not a markdown — don't treat it as
-            # a sale (it would show false sale badges).
-            compare_at_price_cents=None,
+            compare_at_price_cents=msrp if msrp and msrp > price_cents else None,
             nutrition=None,  # filled by Open Food Facts enrichment via UPC
         )
         return ProductRecord(

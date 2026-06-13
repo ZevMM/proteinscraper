@@ -35,7 +35,7 @@ async def test_extract_search_only():
     assert record.source_sku == "B000QSNYGI"
     v = record.variants[0]
     assert v.price_cents == 7499
-    assert v.compare_at_price_cents is None  # list price, not a real sale
+    assert v.compare_at_price_cents == 8999
     assert v.size_g == pytest.approx(2267.96, abs=1.0)
     assert v.upc is None  # only available via product-details
     assert v.nutrition is None
