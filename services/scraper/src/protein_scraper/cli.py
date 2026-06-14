@@ -90,6 +90,7 @@ def enrich(verbose: bool = typer.Option(False, "--verbose", "-v")) -> None:
     table = Table("metric", "count")
     table.add_row("variants checked", str(stats.checked))
     table.add_row("nutrition enriched", str(stats.enriched))
+    table.add_row("facts enriched", str(stats.facts_enriched))
     table.add_row("issues flagged", str(stats.issues))
     console.print(table)
 

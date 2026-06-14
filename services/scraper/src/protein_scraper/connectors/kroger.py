@@ -23,7 +23,8 @@ from urllib.parse import quote
 from ..categorize import classify_category
 from ..config import get_settings
 from ..identity import slugify
-from ..models import ProductRecord, VariantRecord
+from ..ingredients import derive_facts
+from ..models import IngredientFactsRecord, ProductRecord, VariantRecord
 from ..units import is_multipack, parse_container_size_grams, to_cents
 from .base import Connector
 
@@ -134,6 +135,22 @@ class KrogerConnector(Connector):
             return False
         return not any(word in text for word in _EXCLUDE)
 
+    @staticmethod
+    def _facts(item: dict[str, Any]) -> IngredientFactsRecord | None:
+        """Map Kroger's structured allergen/declaration fields to facets."""
+        declarations = item.get("manufacturerDeclarations") or []
+        labels = [str(d) for d in declarations if isinstance(d, str)]
+        allergen_names = [
+            str(a.get("name", ""))
+            for a in (item.get("allergens") or [])
+            if isinstance(a, dict)
+            and a.get("levelOfContainmentName") in ("Contains", "Derived From")
+        ]
+        label_text = " ".join(
+            str(item.get(k, "")) for k in ("nonGmoClaimName", "organicClaimName")
+        )
+        return derive_facts(labels=labels, allergens=allergen_names, label_text=label_text)
+
     async def extract(self, ref: dict[str, Any]) -> ProductRecord | None:
         return self.build_record(ref)
 
@@ -193,6 +210,7 @@ class KrogerConnector(Connector):
             upc=upc,
             compare_at_price_cents=compare_at,
             nutrition=None,  # filled by Open Food Facts enrichment via UPC
+            facts=self._facts(item),
         )
         # Canonical Kroger product URL: /p/{name-slug}/{productId}.
         url = f"https://www.kroger.com/p/{slugify(name) or 'product'}/{product_id}"

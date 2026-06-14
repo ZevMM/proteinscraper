@@ -19,7 +19,14 @@ from urllib.parse import quote
 
 from ..categorize import classify_category
 from ..config import get_settings
-from ..models import ExtractionMethod, NutritionRecord, ProductRecord, VariantRecord
+from ..ingredients import derive_facts, extract_ingredients_text
+from ..models import (
+    ExtractionMethod,
+    IngredientFactsRecord,
+    NutritionRecord,
+    ProductRecord,
+    VariantRecord,
+)
 from ..units import is_multipack, parse_container_size_grams, parse_weight_to_grams, to_cents
 from .base import Connector
 
@@ -153,6 +160,7 @@ class AmazonConnector(Connector):
             # Amazon product_information often has protein + servings directly;
             # OFF enrichment (by UPC) fills any that it doesn't.
             nutrition=nutrition,
+            facts=self._facts(details, info),
         )
         return ProductRecord(
             source_sku=asin,
@@ -179,6 +187,25 @@ class AmazonConnector(Connector):
             return match.group(1).strip()
         manufacturer = info.get("Manufacturer")
         return str(manufacturer).strip() if manufacturer else None
+
+    @staticmethod
+    def _facts(details: dict[str, Any], info: dict[str, Any]) -> IngredientFactsRecord | None:
+        """Ingredients + facets from Amazon product_information / about."""
+        labels = [s.strip() for s in str(info.get("Diet Type", "")).split(",") if s.strip()]
+        allergen_info = str(info.get("Allergen Information", "")).strip()
+        allergens = [allergen_info] if allergen_info else None
+        ingredients = info.get("Ingredients")
+        if not ingredients:
+            about = details.get("about_product")
+            about_text = " ".join(str(a) for a in about) if isinstance(about, list) else ""
+            ingredients = extract_ingredients_text(
+                f"{about_text} {details.get('product_description', '')}"
+            )
+        return derive_facts(
+            ingredients_text=str(ingredients) if ingredients else None,
+            labels=labels,
+            allergens=allergens,
+        )
 
     @staticmethod
     def _nutrition_from_info(info: dict[str, Any]) -> NutritionRecord | None:

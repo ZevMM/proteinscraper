@@ -1,5 +1,6 @@
 import { prisma, type ListingMetrics, type Prisma } from "@proteinscraper/db";
 
+import { ARTIFICIAL_SWEETENERS } from "./facets";
 import { DEFAULT_METRIC, METRICS, isMetricKey, type MetricKey } from "./metrics";
 
 export interface Filters {
@@ -14,6 +15,12 @@ export interface Filters {
   order: "best" | "worst";
   /** "grouped" = one row per product (best offer); "all" = every offer. */
   view: "grouped" | "all";
+  /** Require all of these dietary/certification labels. */
+  dietary: string[];
+  /** Exclude products containing any of these allergens. */
+  allergenFree: string[];
+  /** Exclude products with artificial sweeteners. */
+  noArtificial: boolean;
 }
 
 type RawParams = Record<string, string | string[] | undefined>;
@@ -21,6 +28,11 @@ type RawParams = Record<string, string | string[] | undefined>;
 function first(value: string | string[] | undefined): string | undefined {
   const v = Array.isArray(value) ? value[0] : value;
   return v && v.length > 0 ? v : undefined;
+}
+
+function all(value: string | string[] | undefined): string[] {
+  if (value == null) return [];
+  return (Array.isArray(value) ? value : [value]).filter((v) => v.length > 0);
 }
 
 export function parseFilters(params: RawParams): Filters {
@@ -37,6 +49,9 @@ export function parseFilters(params: RawParams): Filters {
     metric: isMetricKey(metricParam) ? metricParam : DEFAULT_METRIC,
     order: first(params.order) === "worst" ? "worst" : "best",
     view: first(params.view) === "all" ? "all" : "grouped",
+    dietary: all(params.dietary),
+    allergenFree: all(params.allergenFree),
+    noArtificial: first(params.noArtificial) === "1",
   };
 }
 
@@ -62,6 +77,12 @@ export function buildQuery(filters: Filters): {
   if (metric.requiresNutrition) {
     where[metric.field as "proteinPerDollar"] = { not: null };
   }
+
+  if (filters.dietary.length) where.dietaryLabels = { hasEvery: filters.dietary };
+  const exclude: Prisma.ListingMetricsWhereInput[] = [];
+  if (filters.allergenFree.length) exclude.push({ allergens: { hasSome: filters.allergenFree } });
+  if (filters.noArtificial) exclude.push({ sweeteners: { hasSome: ARTIFICIAL_SWEETENERS } });
+  if (exclude.length) where.NOT = exclude;
 
   // "best" first => descending when higher is better, ascending otherwise.
   const descending = filters.order === "best" ? metric.higherIsBetter : !metric.higherIsBetter;

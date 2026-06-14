@@ -9,7 +9,7 @@ from typing import Any
 from .config import Settings, get_settings
 from .connectors import get_connector
 from .db import Repository, create_engine
-from .enrich.openfoodfacts import fetch_off_product, parse_off_product
+from .enrich.openfoodfacts import fetch_off_product, parse_off_facts, parse_off_product
 from .extract.llm import LlmExtractor
 from .http import Fetcher
 from .models import ProductRecord
@@ -70,6 +70,9 @@ def persist_product(repo: Repository, source_id: str, record: ProductRecord) -> 
         )
         stats.variants += 1
         stats.prices += 1
+
+        if variant.facts is not None:
+            repo.upsert_facts(variant_id=variant_id, facts=variant.facts)
 
         if variant.nutrition is None:
             continue
@@ -160,6 +163,7 @@ async def run(slugs: list[str] | None = None, settings: Settings | None = None) 
 class EnrichStats:
     checked: int = 0
     enriched: int = 0
+    facts_enriched: int = 0
     issues: int = 0
 
 
@@ -198,4 +202,20 @@ async def enrich(settings: Settings | None = None) -> EnrichStats:
                     payload=record.model_dump(mode="json"),
                 )
                 stats.issues += 1
+
+        # Ingredient facts (allergens/labels/sweeteners) via the same OFF lookup.
+        # OFF responses are cached, so re-fetching an already-seen UPC is free.
+        for row in repo.variants_missing_facts_with_upc():
+            variant_id, upc = str(row["id"]), row["upc"]
+            try:
+                product = await fetch_off_product(fetcher, upc)
+            except Exception as exc:
+                logger.warning("OFF facts fetch failed for %s: %s", upc, exc)
+                continue
+            if product is None:
+                continue
+            facts = parse_off_facts(product)
+            if facts is not None:
+                repo.upsert_facts(variant_id=variant_id, facts=facts)
+                stats.facts_enriched += 1
     return stats

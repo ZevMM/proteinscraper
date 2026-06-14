@@ -1,3 +1,4 @@
+import { ALLERGEN_OPTIONS, DIETARY_OPTIONS } from "@/lib/facets";
 import { METRIC_LIST } from "@/lib/metrics";
 import type { Facets } from "@/lib/queries";
 import type { Filters } from "@/lib/queries";
@@ -128,6 +129,52 @@ export function FilterBar({ filters, facets }: { filters: Filters; facets: Facet
         />
         In stock only
       </label>
+
+      <fieldset className="col-span-full flex flex-col gap-1 border-t border-neutral-100 pt-3">
+        <legend className="text-xs font-semibold text-neutral-700">Dietary &amp; certifications</legend>
+        <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+          {DIETARY_OPTIONS.map((o) => (
+            <label key={o.value} className="flex items-center gap-1.5 text-xs text-neutral-600">
+              <input
+                type="checkbox"
+                name="dietary"
+                value={o.value}
+                defaultChecked={filters.dietary.includes(o.value)}
+                className="h-4 w-4"
+              />
+              {o.label}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      <fieldset className="col-span-full flex flex-col gap-1">
+        <legend className="text-xs font-semibold text-neutral-700">Free from (exclude allergens)</legend>
+        <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+          {ALLERGEN_OPTIONS.map((o) => (
+            <label key={o.value} className="flex items-center gap-1.5 text-xs text-neutral-600">
+              <input
+                type="checkbox"
+                name="allergenFree"
+                value={o.value}
+                defaultChecked={filters.allergenFree.includes(o.value)}
+                className="h-4 w-4"
+              />
+              {o.label}
+            </label>
+          ))}
+          <label className="flex items-center gap-1.5 text-xs font-medium text-neutral-700">
+            <input
+              type="checkbox"
+              name="noArtificial"
+              value="1"
+              defaultChecked={filters.noArtificial}
+              className="h-4 w-4"
+            />
+            No artificial sweeteners
+          </label>
+        </div>
+      </fieldset>
 
       <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-2">
         <button

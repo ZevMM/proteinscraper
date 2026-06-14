@@ -15,7 +15,8 @@ from urllib.parse import quote
 
 from ..categorize import classify_category
 from ..config import get_settings
-from ..models import ProductRecord, VariantRecord
+from ..ingredients import derive_facts, extract_ingredients_text
+from ..models import IngredientFactsRecord, ProductRecord, VariantRecord
 from ..units import is_multipack, parse_container_size_grams, to_cents
 from ..walmart_auth import build_auth_headers
 from .base import Connector
@@ -98,6 +99,12 @@ class WalmartConnector(Connector):
             return False
         return not any(word in text for word in _EXCLUDE)
 
+    @staticmethod
+    def _facts(item: dict[str, Any]) -> IngredientFactsRecord | None:
+        """Ingredients/labels from Walmart's description fields (best-effort prose)."""
+        text = f"{item.get('shortDescription', '')} {item.get('longDescription', '')}"
+        return derive_facts(ingredients_text=extract_ingredients_text(text), label_text=text)
+
     async def _lookup(self, item_id: str) -> dict[str, Any] | None:
         """Fetch fresh item data via Product Lookup. The Search API's price is
         often stale (and may be a marketplace offer), but the item lookup returns
@@ -163,6 +170,7 @@ class WalmartConnector(Connector):
             upc=str(upc) if upc else None,
             compare_at_price_cents=msrp if msrp and msrp > price_cents else None,
             nutrition=None,  # filled by Open Food Facts enrichment via UPC
+            facts=self._facts(item),
         )
         return ProductRecord(
             source_sku=item_id,

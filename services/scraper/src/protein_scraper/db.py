@@ -15,12 +15,12 @@ from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import ENUM, JSONB, UUID
+from sqlalchemy.dialects.postgresql import ARRAY, ENUM, JSONB, UUID
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.engine import Engine
 
 from .identity import normalize_brand, product_dedup_key, slugify
-from .models import NutritionRecord, VariantRecord
+from .models import IngredientFactsRecord, NutritionRecord, VariantRecord
 
 __all__ = ["Repository", "create_engine", "slugify", "to_sqlalchemy_url"]
 
@@ -113,6 +113,18 @@ nutrition = sa.Table(
     sa.Column("caloriesKcal", sa.Float),
     sa.Column("confidence", sa.Float, nullable=False),
     sa.Column("extractionMethod", _extraction_method, nullable=False),
+    sa.Column("updatedAt", sa.DateTime, nullable=False),
+)
+
+ingredient_facts = sa.Table(
+    "ingredient_facts", metadata,
+    sa.Column("id", UUID(as_uuid=False), primary_key=True,
+              server_default=sa.text("gen_random_uuid()")),
+    sa.Column("variantId", UUID(as_uuid=False), nullable=False),
+    sa.Column("ingredientsText", sa.Text),
+    sa.Column("dietaryLabels", ARRAY(sa.Text), nullable=False),
+    sa.Column("allergens", ARRAY(sa.Text), nullable=False),
+    sa.Column("sweeteners", ARRAY(sa.Text), nullable=False),
     sa.Column("updatedAt", sa.DateTime, nullable=False),
 )
 
@@ -327,6 +339,39 @@ class Repository:
         )
         with self.engine.begin() as conn:
             conn.execute(stmt)
+
+    def upsert_facts(self, *, variant_id: str, facts: IngredientFactsRecord) -> None:
+        values = {
+            "variantId": variant_id,
+            "ingredientsText": facts.ingredients_text,
+            "dietaryLabels": facts.dietary_labels,
+            "allergens": facts.allergens,
+            "sweeteners": facts.sweeteners,
+            "updatedAt": _utcnow(),
+        }
+        update = {k: v for k, v in values.items() if k != "variantId"}
+        stmt = (
+            pg_insert(ingredient_facts)
+            .values(**values)
+            .on_conflict_do_update(index_elements=[ingredient_facts.c.variantId], set_=update)
+        )
+        with self.engine.begin() as conn:
+            conn.execute(stmt)
+
+    def variants_missing_facts_with_upc(self, limit: int = 1000) -> list[dict[str, Any]]:
+        """Variants with a UPC but no ingredient facts yet — OFF enrichment candidates."""
+        stmt = (
+            sa.select(variants.c.id, variants.c.upc)
+            .select_from(
+                variants.outerjoin(
+                    ingredient_facts, ingredient_facts.c.variantId == variants.c.id
+                )
+            )
+            .where(variants.c.upc.isnot(None), ingredient_facts.c.id.is_(None))
+            .limit(limit)
+        )
+        with self.engine.connect() as conn:
+            return [dict(r) for r in conn.execute(stmt).mappings().all()]
 
     def add_price_observation(
         self, *, variant_id: str, price_cents: int, currency: str, in_stock: bool

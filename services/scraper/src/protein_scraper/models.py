@@ -42,6 +42,23 @@ class NutritionRecord(BaseModel):
         return self.protein_g is not None and self.servings_per_container is not None
 
 
+class IngredientFactsRecord(BaseModel):
+    """Ingredient list + normalized facet tags for filtering."""
+
+    ingredients_text: str | None = None
+    dietary_labels: list[str] = Field(default_factory=list)
+    allergens: list[str] = Field(default_factory=list)
+    sweeteners: list[str] = Field(default_factory=list)
+
+    def is_empty(self) -> bool:
+        return not (
+            self.ingredients_text
+            or self.dietary_labels
+            or self.allergens
+            or self.sweeteners
+        )
+
+
 class VariantRecord(BaseModel):
     """A purchasable (flavor, size) variant with its current price."""
 
@@ -55,6 +72,7 @@ class VariantRecord(BaseModel):
     upc: str | None = None
     compare_at_price_cents: int | None = None
     nutrition: NutritionRecord | None = None
+    facts: IngredientFactsRecord | None = None
 
 
 class ProductRecord(BaseModel):

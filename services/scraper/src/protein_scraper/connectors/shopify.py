@@ -13,7 +13,8 @@ from typing import Any
 
 from ..categorize import classify_category
 from ..extract.nutrition import html_to_text, merge_nutrition, parse_nutrition_text
-from ..models import NutritionRecord, ProductRecord, VariantRecord
+from ..ingredients import derive_facts, extract_ingredients_text
+from ..models import IngredientFactsRecord, NutritionRecord, ProductRecord, VariantRecord
 from ..units import clean_flavor, parse_servings, parse_weight_to_grams, to_cents
 from .base import Connector
 
@@ -119,6 +120,15 @@ class ShopifyConnector(Connector):
             )
         return n
 
+    @staticmethod
+    def _facts(product: dict[str, Any]) -> IngredientFactsRecord | None:
+        """Ingredients from the description; dietary labels from tags/product_type."""
+        ingredients = extract_ingredients_text(html_to_text(product.get("body_html", "")))
+        tags = product.get("tags", [])
+        tags_str = " ".join(tags) if isinstance(tags, list) else str(tags)
+        label_text = f"{tags_str} {product.get('product_type', '')}"
+        return derive_facts(ingredients_text=ingredients, label_text=label_text)
+
     async def extract(self, ref: dict[str, Any]) -> ProductRecord | None:
         product = ref
         handle = product.get("handle")
@@ -127,6 +137,7 @@ class ShopifyConnector(Connector):
 
         flavor_idx, size_idx = self._option_indices(product)
         nutrition = self._extract_nutrition(product)
+        facts = self._facts(product)
 
         variants: list[VariantRecord] = []
         for variant in product.get("variants", []):
@@ -154,6 +165,7 @@ class ShopifyConnector(Connector):
                     in_stock=bool(variant.get("available", True)),
                     compare_at_price_cents=on_sale,
                     nutrition=self._variant_nutrition(nutrition, product, variant, size_g),
+                    facts=facts.model_copy() if facts else None,
                 )
             )
 

@@ -11,8 +11,44 @@ import json
 from typing import Any
 
 from ..http import Fetcher
-from ..models import ExtractionMethod, NutritionRecord
+from ..ingredients import derive_facts
+from ..models import ExtractionMethod, IngredientFactsRecord, NutritionRecord
 from ..units import parse_weight_to_grams
+
+# Map Open Food Facts tag leaves to our canonical facet vocabulary.
+_OFF_ALLERGEN = {
+    "milk": "milk", "soybeans": "soy", "soy": "soy", "gluten": "gluten",
+    "eggs": "egg", "egg": "egg", "nuts": "tree_nuts", "tree-nuts": "tree_nuts",
+    "peanuts": "peanut", "fish": "fish", "crustaceans": "shellfish",
+    "molluscs": "shellfish", "sesame-seeds": "sesame", "sesame": "sesame",
+}
+_OFF_LABEL = {
+    "vegan": "vegan", "vegetarian": "vegetarian", "gluten-free": "gluten_free",
+    "no-gluten": "gluten_free", "organic": "organic", "eu-organic": "organic",
+    "usda-organic": "organic", "kosher": "kosher", "halal": "halal",
+    "non-gmo": "non_gmo", "no-gmos": "non_gmo", "keto": "keto", "dairy-free": "dairy_free",
+}
+
+
+def parse_off_facts(product: dict[str, Any]) -> IngredientFactsRecord | None:
+    """Map an OFF product to ingredient facts (ingredients + allergens + labels)."""
+    ingredients = product.get("ingredients_text") or product.get("ingredients_text_en")
+    allergens = {
+        _OFF_ALLERGEN[leaf]
+        for t in product.get("allergens_tags", [])
+        if (leaf := str(t).split(":")[-1]) in _OFF_ALLERGEN
+    }
+    labels = {
+        _OFF_LABEL[leaf]
+        for t in product.get("labels_tags", [])
+        if (leaf := str(t).split(":")[-1]) in _OFF_LABEL
+    }
+    # derive sweeteners (and anything else) from the ingredient text, then merge
+    # in OFF's structured allergens/labels.
+    record = derive_facts(ingredients_text=ingredients) or IngredientFactsRecord()
+    record.allergens = sorted(set(record.allergens) | allergens)
+    record.dietary_labels = sorted(set(record.dietary_labels) | labels)
+    return None if record.is_empty() else record
 
 PRODUCT_URL = "https://world.openfoodfacts.org/api/v2/product/{barcode}.json"
 

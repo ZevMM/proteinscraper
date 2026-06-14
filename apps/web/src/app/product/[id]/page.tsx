@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { PriceSparkline } from "@/components/PriceSparkline";
+import { ARTIFICIAL_SWEETENERS, facetLabel } from "@/lib/facets";
 import { formatPrice, formatSize, salePercent } from "@/lib/format";
 import { METRICS } from "@/lib/metrics";
 import { getProductDetail } from "@/lib/queries";
@@ -16,6 +17,15 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   const { rows, history } = detail;
   const best = rows[0];
   if (!best) notFound();
+
+  // Aggregate ingredient facts across all variants of this product.
+  const uniq = (xs: string[]) => [...new Set(xs)];
+  const dietary = uniq(rows.flatMap((r) => r.dietaryLabels));
+  const allergens = uniq(rows.flatMap((r) => r.allergens));
+  const sweeteners = uniq(rows.flatMap((r) => r.sweeteners));
+  const ingredientsText = rows.find((r) => r.ingredientsText)?.ingredientsText ?? null;
+  const hasFacts =
+    dietary.length > 0 || allergens.length > 0 || sweeteners.length > 0 || ingredientsText;
 
   return (
     <div className="flex flex-col gap-6">
@@ -65,6 +75,56 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
           </p>
         </section>
       </div>
+
+      {hasFacts ? (
+        <section className="rounded-lg border border-neutral-200 bg-white p-4">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-500">
+            Ingredients &amp; dietary
+          </h2>
+          <div className="flex flex-col gap-3">
+            {dietary.length > 0 ? (
+              <TagRow label="Dietary">
+                {dietary.map((t) => (
+                  <Pill key={t} className="bg-emerald-50 text-emerald-700">
+                    {facetLabel(t)}
+                  </Pill>
+                ))}
+              </TagRow>
+            ) : null}
+            {sweeteners.length > 0 ? (
+              <TagRow label="Sweeteners">
+                {sweeteners.map((t) => (
+                  <Pill
+                    key={t}
+                    className={
+                      ARTIFICIAL_SWEETENERS.includes(t)
+                        ? "bg-amber-50 text-amber-700"
+                        : "bg-neutral-100 text-neutral-700"
+                    }
+                  >
+                    {facetLabel(t)}
+                  </Pill>
+                ))}
+              </TagRow>
+            ) : null}
+            {allergens.length > 0 ? (
+              <TagRow label="Contains">
+                {allergens.map((t) => (
+                  <Pill key={t} className="bg-rose-50 text-rose-700">
+                    {facetLabel(t)}
+                  </Pill>
+                ))}
+              </TagRow>
+            ) : null}
+            {ingredientsText ? (
+              <div className="border-t border-neutral-100 pt-3">
+                <div className="mb-1 text-xs font-semibold text-neutral-500">Ingredients</div>
+                <p className="text-sm leading-relaxed text-neutral-700">{ingredientsText}</p>
+              </div>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
 
       <section className="rounded-lg border border-neutral-200 bg-white">
         <h2 className="px-4 pt-4 text-sm font-semibold uppercase tracking-wide text-neutral-500">
@@ -179,5 +239,20 @@ function Fact({ label, value }: { label: string; value: string }) {
       <dt className="text-neutral-500">{label}</dt>
       <dd className="text-right font-medium text-neutral-900">{value}</dd>
     </>
+  );
+}
+
+function TagRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="text-xs font-semibold text-neutral-500">{label}:</span>
+      {children}
+    </div>
+  );
+}
+
+function Pill({ className, children }: { className: string; children: React.ReactNode }) {
+  return (
+    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${className}`}>{children}</span>
   );
 }
