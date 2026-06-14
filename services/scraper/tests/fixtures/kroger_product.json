@@ -1,0 +1,23 @@
+{
+  "productId": "0074893702401",
+  "upc": "0074893702401",
+  "brand": "Optimum Nutrition",
+  "categories": ["Health", "Vitamins & Supplements"],
+  "description": "Optimum Nutrition Gold Standard 100% Whey Protein Powder Double Rich Chocolate",
+  "items": [
+    {
+      "itemId": "0074893702401",
+      "inventory": { "stockLevel": "HIGH" },
+      "size": "5 lb",
+      "soldBy": "UNIT",
+      "price": {
+        "regular": 74.99,
+        "promo": 64.99,
+        "regularPerUnitEstimate": 74.99,
+        "promoPerUnitEstimate": 64.99
+      }
+    }
+  ],
+  "itemInformation": { "depth": "", "height": "", "width": "" },
+  "temperature": { "indicator": "Ambient", "heatSensitive": false }
+}

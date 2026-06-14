@@ -75,3 +75,29 @@ class Fetcher:
         if self._cache is not None:
             self._cache.set(url, text)
         return text
+
+    @retry(
+        retry=retry_if_exception_type((httpx.TransportError, httpx.HTTPStatusError)),
+        wait=wait_exponential(multiplier=1, min=1, max=20),
+        stop=stop_after_attempt(3),
+        reraise=True,
+    )
+    async def post_text(
+        self,
+        url: str,
+        *,
+        data: str | dict[str, str] | None = None,
+        headers: dict[str, str] | None = None,
+    ) -> str:
+        """POST a request and return the response body.
+
+        Not cached (POSTs are typically auth/token calls). Still rate-limited per
+        host and retried on transient failures, like ``get_text``.
+        """
+        host = httpx.URL(url).host or ""
+        await self._limiter.wait(host)
+        resp = await self._client.post(url, content=data if isinstance(data, str) else None,
+                                       data=data if isinstance(data, dict) else None,
+                                       headers=headers)
+        resp.raise_for_status()
+        return resp.text

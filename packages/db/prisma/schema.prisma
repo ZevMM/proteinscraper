@@ -26,6 +26,8 @@ enum SourceType {
   jsonld
   walmart
   amazon
+  kroger
+  ebay
 }
 
 enum ExtractionMethod {

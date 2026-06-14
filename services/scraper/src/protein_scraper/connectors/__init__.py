@@ -9,7 +9,9 @@ from ..extract.llm import LlmExtractor
 from ..http import Fetcher
 from .amazon import AmazonConnector
 from .base import Connector
+from .ebay import EbayConnector
 from .jsonld import JsonLdConnector
+from .kroger import KrogerConnector
 from .shopify import ShopifyConnector
 from .walmart import WalmartConnector
 
@@ -18,6 +20,8 @@ _REGISTRY: dict[str, type[Connector]] = {
     JsonLdConnector.source_type: JsonLdConnector,
     WalmartConnector.source_type: WalmartConnector,
     AmazonConnector.source_type: AmazonConnector,
+    KrogerConnector.source_type: KrogerConnector,
+    EbayConnector.source_type: EbayConnector,
 }
 
 
@@ -36,7 +40,9 @@ def get_connector(
 __all__ = [
     "AmazonConnector",
     "Connector",
+    "EbayConnector",
     "JsonLdConnector",
+    "KrogerConnector",
     "ShopifyConnector",
     "WalmartConnector",
     "get_connector",
