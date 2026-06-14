@@ -5,8 +5,8 @@ import { DEFAULT_METRIC, METRICS, isMetricKey, type MetricKey } from "./metrics"
 
 export interface Filters {
   q?: string;
-  brand?: string;
-  source?: string;
+  brands: string[];
+  sources: string[];
   inStockOnly: boolean;
   maxPriceCents?: number;
   metric: MetricKey;
@@ -39,8 +39,8 @@ export function parseFilters(params: RawParams): Filters {
   const maxPrice = first(params.maxPrice);
   return {
     q: first(params.q),
-    brand: first(params.brand),
-    source: first(params.source),
+    brands: all(params.brand),
+    sources: all(params.source),
     inStockOnly: first(params.inStock) === "1",
     maxPriceCents: maxPrice ? Math.round(Number(maxPrice) * 100) : undefined,
     metric: isMetricKey(metricParam) ? metricParam : DEFAULT_METRIC,
@@ -61,8 +61,8 @@ export function buildQuery(filters: Filters): {
   const where: Prisma.ListingMetricsWhereInput = {};
 
   if (filters.inStockOnly) where.inStock = true;
-  if (filters.brand) where.brandName = filters.brand;
-  if (filters.source) where.sourceSlug = filters.source;
+  if (filters.brands.length) where.brandName = { in: filters.brands };
+  if (filters.sources.length) where.sourceSlug = { in: filters.sources };
   if (filters.maxPriceCents != null) where.priceCents = { lte: filters.maxPriceCents };
   if (filters.q) {
     where.OR = [

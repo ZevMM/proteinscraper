@@ -1,3 +1,4 @@
+import { MultiSelect, type MultiSelectItem } from "@/components/MultiSelect";
 import { ALLERGEN_OPTIONS, DIETARY_OPTIONS } from "@/lib/facets";
 import { METRIC_LIST } from "@/lib/metrics";
 import type { Facets } from "@/lib/queries";
@@ -5,9 +6,43 @@ import type { Filters } from "@/lib/queries";
 
 /**
  * A plain GET form: submitting encodes all state in the URL, so every filtered
- * view is shareable and bookmarkable with no client-side JavaScript.
+ * view is shareable and bookmarkable. The multi-select dropdowns are thin client
+ * components whose checkboxes are real form inputs, so they submit the same way.
  */
 export function FilterBar({ filters, facets }: { filters: Filters; facets: Facets }) {
+  const brandItems: MultiSelectItem[] = facets.brands.map((b) => ({
+    name: "brand",
+    value: b,
+    label: b,
+    checked: filters.brands.includes(b),
+  }));
+  const retailerItems: MultiSelectItem[] = facets.sources.map((s) => ({
+    name: "source",
+    value: s,
+    label: s,
+    checked: filters.sources.includes(s),
+  }));
+  const dietaryItems: MultiSelectItem[] = DIETARY_OPTIONS.map((o) => ({
+    name: "dietary",
+    value: o.value,
+    label: o.label,
+    checked: filters.dietary.includes(o.value),
+  }));
+  const freeFromItems: MultiSelectItem[] = [
+    ...ALLERGEN_OPTIONS.map((o) => ({
+      name: "allergenFree",
+      value: o.value,
+      label: o.label,
+      checked: filters.allergenFree.includes(o.value),
+    })),
+    {
+      name: "noArtificial",
+      value: "1",
+      label: "Artificial sweeteners",
+      checked: filters.noArtificial,
+    },
+  ];
+
   return (
     <form
       method="get"
@@ -51,37 +86,10 @@ export function FilterBar({ filters, facets }: { filters: Filters; facets: Facet
         </select>
       </label>
 
-      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-600">
-        Brand
-        <select
-          name="brand"
-          defaultValue={filters.brand ?? ""}
-          className="rounded border border-neutral-300 px-2 py-1.5 text-sm text-neutral-900"
-        >
-          <option value="">All brands</option>
-          {facets.brands.map((b) => (
-            <option key={b} value={b}>
-              {b}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-600">
-        Retailer
-        <select
-          name="source"
-          defaultValue={filters.source ?? ""}
-          className="rounded border border-neutral-300 px-2 py-1.5 text-sm text-neutral-900"
-        >
-          <option value="">All retailers</option>
-          {facets.sources.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-      </label>
+      <MultiSelect label="Brand" items={brandItems} placeholder="All brands" />
+      <MultiSelect label="Retailer" items={retailerItems} placeholder="All retailers" />
+      <MultiSelect label="Dietary & certifications" items={dietaryItems} placeholder="Any" />
+      <MultiSelect label="Free from" items={freeFromItems} placeholder="None excluded" />
 
       <label className="flex flex-col gap-1 text-xs font-medium text-neutral-600">
         Max price ($)
@@ -105,52 +113,6 @@ export function FilterBar({ filters, facets }: { filters: Filters; facets: Facet
         />
         In stock only
       </label>
-
-      <fieldset className="col-span-full flex flex-col gap-1 border-t border-neutral-100 pt-3">
-        <legend className="text-xs font-semibold text-neutral-700">Dietary &amp; certifications</legend>
-        <div className="flex flex-wrap gap-x-4 gap-y-1.5">
-          {DIETARY_OPTIONS.map((o) => (
-            <label key={o.value} className="flex items-center gap-1.5 text-xs text-neutral-600">
-              <input
-                type="checkbox"
-                name="dietary"
-                value={o.value}
-                defaultChecked={filters.dietary.includes(o.value)}
-                className="h-4 w-4"
-              />
-              {o.label}
-            </label>
-          ))}
-        </div>
-      </fieldset>
-
-      <fieldset className="col-span-full flex flex-col gap-1">
-        <legend className="text-xs font-semibold text-neutral-700">Free from (exclude allergens)</legend>
-        <div className="flex flex-wrap gap-x-4 gap-y-1.5">
-          {ALLERGEN_OPTIONS.map((o) => (
-            <label key={o.value} className="flex items-center gap-1.5 text-xs text-neutral-600">
-              <input
-                type="checkbox"
-                name="allergenFree"
-                value={o.value}
-                defaultChecked={filters.allergenFree.includes(o.value)}
-                className="h-4 w-4"
-              />
-              {o.label}
-            </label>
-          ))}
-          <label className="flex items-center gap-1.5 text-xs font-medium text-neutral-700">
-            <input
-              type="checkbox"
-              name="noArtificial"
-              value="1"
-              defaultChecked={filters.noArtificial}
-              className="h-4 w-4"
-            />
-            No artificial sweeteners
-          </label>
-        </div>
-      </fieldset>
 
       <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-2">
         <button
