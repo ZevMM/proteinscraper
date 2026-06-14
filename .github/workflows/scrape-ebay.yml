@@ -1,0 +1,41 @@
+name: eBay scrape (every 3 days)
+
+on:
+  schedule:
+    # 11:00 UTC every 3rd day of the month (offset from the daily 09:00 sweep and
+    # the weekly Amazon run at 10:00). eBay's Browse API quota is free + generous,
+    # so a tighter cadence than Amazon is fine; it stays out of the daily --all run
+    # (enabled:false) to keep marketplace noise/quota out of the main sweep.
+    - cron: "0 11 */3 * *"
+  workflow_dispatch:
+
+concurrency:
+  group: scrape-ebay
+  cancel-in-progress: false
+
+jobs:
+  ebay:
+    name: eBay (Browse API) + enrich
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      EBAY_CLIENT_ID: ${{ secrets.EBAY_CLIENT_ID }}
+      EBAY_CLIENT_SECRET: ${{ secrets.EBAY_CLIENT_SECRET }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - name: Install scraper
+        working-directory: services/scraper
+        run: uv sync --frozen
+      - name: Seed sources (ensures the ebay source exists)
+        working-directory: services/scraper
+        run: uv run scraper seed
+      - name: Scrape eBay
+        working-directory: services/scraper
+        run: uv run scraper run --source ebay -v
+      - name: Enrich nutrition via Open Food Facts (by UPC)
+        working-directory: services/scraper
+        run: uv run scraper enrich -v
