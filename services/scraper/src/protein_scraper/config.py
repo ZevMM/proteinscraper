@@ -32,6 +32,16 @@ class Settings(BaseSettings):
     walmart_key_version: str = "1"
     walmart_publisher_id: str = ""
 
+    # Kroger Products API (OAuth client-credentials). Register a free app at
+    # developer.kroger.com to get a client id + secret.
+    kroger_client_id: str = ""
+    kroger_client_secret: str = ""
+
+    # eBay Browse API (OAuth client-credentials / application token). Register a
+    # free app at developer.ebay.com to get a client id (App ID) + secret (Cert ID).
+    ebay_client_id: str = ""
+    ebay_client_secret: str = ""
+
     @property
     def llm_enabled(self) -> bool:
         return bool(self.anthropic_api_key.strip())
@@ -48,6 +58,14 @@ class Settings(BaseSettings):
     @property
     def walmart_enabled(self) -> bool:
         return bool(self.walmart_consumer_id.strip() and self.walmart_private_key.strip())
+
+    @property
+    def kroger_enabled(self) -> bool:
+        return bool(self.kroger_client_id.strip() and self.kroger_client_secret.strip())
+
+    @property
+    def ebay_enabled(self) -> bool:
+        return bool(self.ebay_client_id.strip() and self.ebay_client_secret.strip())
 
 
 _settings: Settings | None = None

@@ -197,6 +197,78 @@ sources:
     config:
       max_pages: 1
 
+  # --- Additional US Shopify stores (verified /products.json, USD) -----------
+  - slug: levels
+    name: Levels
+    type: shopify
+    base_url: https://levelsprotein.com
+    config:
+      max_pages: 1
+
+  - slug: nutricost
+    name: Nutricost
+    type: shopify
+    base_url: https://nutricost.com
+    config:
+      max_pages: 3
+
+  - slug: sixstar
+    name: Six Star
+    type: shopify
+    base_url: https://www.sixstarpro.com
+    config:
+      max_pages: 1
+
+  - slug: just-ingredients
+    name: Just Ingredients
+    type: shopify
+    base_url: https://justingredients.com
+    config:
+      max_pages: 2
+
+  - slug: onnit
+    name: Onnit
+    type: shopify
+    base_url: https://www.onnit.com
+    config:
+      max_pages: 1
+
+  # Multi-brand reseller on Shopify (USD). Carries mass brands (GHOST, Nutrex,
+  # MuscleMeds, ...) via a real `vendor` field, broadening brand coverage.
+  - slug: bodybuilding-shop
+    name: Bodybuilding.com
+    type: shopify
+    base_url: https://shop.bodybuilding.com
+    config:
+      max_pages: 2
+
+  # Kroger via the official Products API (OAuth client-credentials, free).
+  # Returns authentic per-store grocery prices + a 13-digit base UPC (enables
+  # cross-source dedup + Open Food Facts nutrition). No-ops until
+  # KROGER_CLIENT_ID + KROGER_CLIENT_SECRET are set. Price requires a store, so
+  # the connector resolves one from `zip_code`.
+  - slug: kroger
+    name: Kroger
+    type: kroger
+    base_url: https://www.kroger.com
+    config:
+      max_pages: 2
+      zip_code: "45202"
+
+  # eBay via the official Browse API (OAuth client-credentials application token).
+  # Restricted to brand-new, fixed-price, reputable-seller listings for price
+  # accuracy. getItem recovers GTIN/UPC for dedup. enabled:false keeps it out of
+  # the daily --all run (rate/quota-sensitive); run via `run --source ebay`.
+  # No-ops until EBAY_CLIENT_ID + EBAY_CLIENT_SECRET are set.
+  - slug: ebay
+    name: eBay
+    type: ebay
+    base_url: https://www.ebay.com
+    enabled: false
+    config:
+      max_pages: 1
+      fetch_details: true
+
   # Walmart via the official IO Affiliate API. No-ops until WALMART_CONSUMER_ID +
   # WALMART_PRIVATE_KEY (+ WALMART_KEY_VERSION) are set in the environment.
   - slug: walmart

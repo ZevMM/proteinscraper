@@ -26,7 +26,10 @@ __all__ = ["Repository", "create_engine", "slugify", "to_sqlalchemy_url"]
 
 metadata = sa.MetaData()
 
-_source_type = ENUM("shopify", "jsonld", "walmart", "amazon", name="SourceType", create_type=False)
+_source_type = ENUM(
+    "shopify", "jsonld", "walmart", "amazon", "kroger", "ebay",
+    name="SourceType", create_type=False,
+)
 _extraction_method = ENUM(
     "shopify_json", "json_ld", "html_parse", "llm", "manual",
     name="ExtractionMethod", create_type=False,

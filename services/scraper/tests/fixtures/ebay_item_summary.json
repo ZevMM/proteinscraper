@@ -1,0 +1,19 @@
+{
+  "itemId": "v1|123456789012|0",
+  "title": "Optimum Nutrition Gold Standard 100% Whey Protein Powder 5 lb Double Rich Chocolate",
+  "price": { "value": "69.95", "currency": "USD" },
+  "condition": "New",
+  "conditionId": "1000",
+  "itemWebUrl": "https://www.ebay.com/itm/123456789012",
+  "marketingPrice": {
+    "originalPrice": { "value": "79.99", "currency": "USD" },
+    "discountPercentage": "12",
+    "priceTreatment": "STP"
+  },
+  "seller": {
+    "username": "supplement_superstore",
+    "feedbackPercentage": "99.5",
+    "feedbackScore": 48213
+  },
+  "buyingOptions": ["FIXED_PRICE"]
+}
