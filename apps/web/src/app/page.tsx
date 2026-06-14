@@ -6,7 +6,6 @@ import { METRICS, type MetricKey } from "@/lib/metrics";
 import {
   getFacets,
   getGroupedListings,
-  getListings,
   parseFilters,
   type GroupedListing,
 } from "@/lib/queries";
@@ -14,17 +13,25 @@ import {
 // Always reflect the latest scraped prices.
 export const dynamic = "force-dynamic";
 
+const PAGE_SIZE = 50;
+
 export default async function HomePage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const filters = parseFilters(await searchParams);
+  const sp = await searchParams;
+  const filters = parseFilters(sp);
   const grouped = filters.view === "grouped";
-  const [rows, facets] = await Promise.all([
-    grouped ? getGroupedListings(filters) : getListings(filters),
+  const pageParam = Array.isArray(sp.page) ? sp.page[0] : sp.page;
+  const page = Math.max(1, Number.parseInt(pageParam ?? "1", 10) || 1);
+  const [{ rows, total }, facets] = await Promise.all([
+    getGroupedListings(filters, page, PAGE_SIZE),
     getFacets(),
   ]);
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const firstShown = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+  const lastShown = Math.min(page * PAGE_SIZE, total);
   const activeMetric = METRICS[filters.metric];
   // Metrics that already have a dedicated column in the table. Sorting by one of
   // these just highlights that column instead of adding a duplicate; any other
@@ -58,7 +65,9 @@ export default async function HomePage({
 
       <FilterBar filters={filters} facets={facets} />
 
-      <p className="text-sm text-neutral-500">{rows.length} results</p>
+      <p className="text-sm text-neutral-500">
+        {total === 0 ? "No results" : `Showing ${firstShown}–${lastShown} of ${total} results`}
+      </p>
 
       {rows.length === 0 ? (
         <div className="rounded-lg border border-dashed border-neutral-300 p-10 text-center text-neutral-500">
@@ -256,10 +265,65 @@ export default async function HomePage({
           </div>
         </>
       )}
+
+      {totalPages > 1 ? (
+        <nav className="flex items-center justify-between gap-2 pt-1">
+          <PageLink sp={sp} page={page - 1} disabled={page <= 1}>
+            ← Prev
+          </PageLink>
+          <span className="text-sm text-neutral-500">
+            Page {page} of {totalPages}
+          </span>
+          <PageLink sp={sp} page={page + 1} disabled={page >= totalPages}>
+            Next →
+          </PageLink>
+        </nav>
+      ) : null}
     </div>
   );
 }
 
 function numeric(value: unknown): number | null {
   return typeof value === "number" ? value : null;
+}
+
+/** Build a homepage URL preserving current filters but setting the page number. */
+function pageHref(sp: Record<string, string | string[] | undefined>, page: number): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(sp)) {
+    if (key === "page" || value == null) continue;
+    if (Array.isArray(value)) value.forEach((v) => params.append(key, v));
+    else params.set(key, value);
+  }
+  if (page > 1) params.set("page", String(page));
+  const qs = params.toString();
+  return qs ? `/?${qs}` : "/";
+}
+
+function PageLink({
+  sp,
+  page,
+  disabled,
+  children,
+}: {
+  sp: Record<string, string | string[] | undefined>;
+  page: number;
+  disabled: boolean;
+  children: React.ReactNode;
+}) {
+  if (disabled) {
+    return (
+      <span className="rounded border border-neutral-200 px-3 py-1.5 text-sm text-neutral-300">
+        {children}
+      </span>
+    );
+  }
+  return (
+    <a
+      href={pageHref(sp, page)}
+      className="rounded border border-neutral-300 px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+    >
+      {children}
+    </a>
+  );
 }

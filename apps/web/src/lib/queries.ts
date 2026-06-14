@@ -104,14 +104,27 @@ export type GroupedListing = ListingMetrics & {
   offerCount: number;
 };
 
+export interface PagedListings {
+  rows: GroupedListing[];
+  /** Total number of distinct products matching the filters (across all pages). */
+  total: number;
+}
+
 /**
  * One row per product: its best offer for the selected metric, plus how many
  * retailers/offers carry it. Rows come back already sorted best-first, so the
  * first time a product is seen is its best offer (and products stay best-first).
+ *
+ * Grouping happens in-app over the full matching set, so `total` is the true
+ * product count and the returned `rows` are the requested page of that set.
  */
-export async function getGroupedListings(filters: Filters, take = 200): Promise<GroupedListing[]> {
+export async function getGroupedListings(
+  filters: Filters,
+  page = 1,
+  pageSize = 50,
+): Promise<PagedListings> {
   const { where, orderBy } = buildQuery(filters);
-  const rows = await prisma.listingMetrics.findMany({ where, orderBy, take: 2000 });
+  const rows = await prisma.listingMetrics.findMany({ where, orderBy });
 
   const byProduct = new Map<string, { best: ListingMetrics; retailers: Set<string>; offers: number }>();
   for (const row of rows) {
@@ -128,9 +141,13 @@ export async function getGroupedListings(filters: Filters, take = 200): Promise<
     }
   }
 
-  return [...byProduct.values()]
-    .slice(0, take)
-    .map((g) => ({ ...g.best, retailerCount: g.retailers.size, offerCount: g.offers }));
+  const grouped = [...byProduct.values()].map((g) => ({
+    ...g.best,
+    retailerCount: g.retailers.size,
+    offerCount: g.offers,
+  }));
+  const start = (page - 1) * pageSize;
+  return { rows: grouped.slice(start, start + pageSize), total: grouped.length };
 }
 
 export interface Facets {
