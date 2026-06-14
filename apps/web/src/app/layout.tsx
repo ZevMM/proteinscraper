@@ -19,7 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               Supp<span className="text-brand-600">Search</span>
             </Link>
             <a
-              href="mailto:ryan@grovecare.co?subject=SuppSearch%20feedback"
+              href="mailto:6a75f278-222d-468c-86ba-e1bdf8e5529c@anonaddy.com?subject=SuppSearch%20feedback"
               className="text-sm font-medium text-brand-700 hover:underline"
             >
               Feedback?

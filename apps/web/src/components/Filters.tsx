@@ -128,7 +128,7 @@ export function FilterBar({ filters, facets }: { filters: Filters; facets: Facet
         </div>
       </div>
 
-      <div className="flex gap-2">
+      <div className="mt-2 flex gap-2">
         <button
           type="submit"
           className="rounded bg-brand-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-brand-700"
