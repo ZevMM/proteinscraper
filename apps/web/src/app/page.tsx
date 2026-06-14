@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { FilterBar } from "@/components/Filters";
 import { formatPrice, formatSize, salePercent } from "@/lib/format";
-import { METRICS } from "@/lib/metrics";
+import { METRICS, type MetricKey } from "@/lib/metrics";
 import {
   getFacets,
   getGroupedListings,
@@ -26,6 +26,24 @@ export default async function HomePage({
     getFacets(),
   ]);
   const activeMetric = METRICS[filters.metric];
+  // Metrics that already have a dedicated column in the table. Sorting by one of
+  // these just highlights that column instead of adding a duplicate; any other
+  // metric gets an extra column inserted right after "Best price".
+  const FIXED_COLUMN_METRICS = new Set<MetricKey>([
+    "priceCents",
+    "proteinPerDollar",
+    "costPer30gProtein",
+  ]);
+  const showExtraColumn = !FIXED_COLUMN_METRICS.has(filters.metric);
+  const isSort = (key: MetricKey) => filters.metric === key;
+  const thSort = (key: MetricKey) =>
+    isSort(key)
+      ? "border-b-2 border-brand-500 bg-neutral-100 px-3 py-2 text-right font-semibold text-neutral-800"
+      : "px-3 py-2 text-right";
+  const tdSort = (key: MetricKey) =>
+    isSort(key)
+      ? "bg-neutral-50 px-3 py-2 text-right font-semibold text-neutral-900"
+      : "px-3 py-2 text-right text-neutral-600";
 
   return (
     <div className="flex flex-col gap-5">
@@ -55,15 +73,17 @@ export default async function HomePage({
                 <tr className="border-b border-neutral-200 bg-neutral-50 text-left text-xs uppercase tracking-wide text-neutral-500">
                   <th className="px-3 py-2">#</th>
                   <th className="px-3 py-2">Product</th>
-                  <th className="px-3 py-2">{grouped ? "Retailers" : "Retailer"}</th>
+                  <th className="px-3 py-2">Retailers</th>
                   <th className="px-3 py-2 text-right">Size</th>
-                  <th className="px-3 py-2 text-right">{grouped ? "Best price" : "Price"}</th>
+                  <th className={thSort("priceCents")}>Best price</th>
+                  {showExtraColumn ? (
+                    <th className="border-b-2 border-brand-500 bg-neutral-100 px-3 py-2 text-right font-semibold text-neutral-800">
+                      {activeMetric.label}
+                    </th>
+                  ) : null}
                   <th className="px-3 py-2 text-right">Protein/serv</th>
-                  <th className="border-b-2 border-brand-500 bg-neutral-100 px-3 py-2 text-right font-semibold text-neutral-800">
-                    {activeMetric.label}
-                  </th>
-                  <th className="px-3 py-2 text-right">Protein/$</th>
-                  <th className="px-3 py-2 text-right">$/30g protein</th>
+                  <th className={thSort("proteinPerDollar")}>Protein/$</th>
+                  <th className={thSort("costPer30gProtein")}>$/30g protein</th>
                 </tr>
               </thead>
               <tbody>
@@ -106,7 +126,13 @@ export default async function HomePage({
                       <td className="px-3 py-2 text-right text-neutral-600">
                         {formatSize(r.sizeG)}
                       </td>
-                      <td className="px-3 py-2 text-right">
+                      <td
+                        className={
+                          isSort("priceCents")
+                            ? "bg-neutral-50 px-3 py-2 text-right"
+                            : "px-3 py-2 text-right"
+                        }
+                      >
                         <span className="font-medium">{formatPrice(r.priceCents)}</span>
                         {off != null ? (
                           <div className="text-xs">
@@ -117,16 +143,18 @@ export default async function HomePage({
                           </div>
                         ) : null}
                       </td>
+                      {showExtraColumn ? (
+                        <td className="bg-neutral-50 px-3 py-2 text-right font-semibold text-neutral-900">
+                          {activeMetric.format(numeric(r[activeMetric.field as keyof typeof r]))}
+                        </td>
+                      ) : null}
                       <td className="px-3 py-2 text-right text-neutral-600">
                         {r.proteinG != null ? `${r.proteinG} g` : "—"}
                       </td>
-                      <td className="bg-neutral-50 px-3 py-2 text-right font-semibold text-neutral-900">
-                        {activeMetric.format(numeric(r[activeMetric.field as keyof typeof r]))}
-                      </td>
-                      <td className="px-3 py-2 text-right text-neutral-600">
+                      <td className={tdSort("proteinPerDollar")}>
                         {METRICS.proteinPerDollar.format(r.proteinPerDollar)}
                       </td>
-                      <td className="px-3 py-2 text-right text-neutral-600">
+                      <td className={tdSort("costPer30gProtein")}>
                         {METRICS.costPer30gProtein.format(r.costPer30gProtein)}
                       </td>
                     </tr>
@@ -178,15 +206,21 @@ export default async function HomePage({
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 border-t border-neutral-100 pt-3">
-                    <div className="flex flex-col rounded bg-neutral-50 p-2">
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
-                        {activeMetric.label}
-                      </span>
-                      <span className="text-sm font-bold text-neutral-900">
-                        {activeMetric.format(numeric(r[activeMetric.field as keyof typeof r]))}
-                      </span>
-                    </div>
-                    <div className="flex flex-col rounded bg-brand-50 p-2">
+                    {showExtraColumn ? (
+                      <div className="flex flex-col rounded bg-neutral-50 p-2 ring-2 ring-brand-400">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
+                          {activeMetric.label}
+                        </span>
+                        <span className="text-sm font-bold text-neutral-900">
+                          {activeMetric.format(numeric(r[activeMetric.field as keyof typeof r]))}
+                        </span>
+                      </div>
+                    ) : null}
+                    <div
+                      className={`flex flex-col rounded bg-brand-50 p-2${
+                        isSort("proteinPerDollar") ? " ring-2 ring-brand-400" : ""
+                      }`}
+                    >
                       <span className="text-[10px] font-semibold uppercase tracking-wider text-brand-700">
                         Protein / $
                       </span>
@@ -194,7 +228,11 @@ export default async function HomePage({
                         {METRICS.proteinPerDollar.format(r.proteinPerDollar)}
                       </span>
                     </div>
-                    <div className="flex flex-col rounded bg-neutral-50 p-2">
+                    <div
+                      className={`flex flex-col rounded bg-neutral-50 p-2${
+                        isSort("costPer30gProtein") ? " ring-2 ring-brand-400" : ""
+                      }`}
+                    >
                       <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
                         $/30g Protein
                       </span>
