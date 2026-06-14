@@ -102,9 +102,12 @@ export function FilterBar({ filters, facets }: { filters: Filters; facets: Facet
       </div>
 
       {/* Filter section: narrow the set of products. */}
-      <div className="border-t border-neutral-100 pt-3">
-        <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
-          Filters
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+            Filters
+          </span>
+          <span className="h-px flex-1 bg-neutral-100" />
         </div>
         <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
           <MultiSelect label="Brand" items={brandItems} placeholder="All brands" />
@@ -125,7 +128,7 @@ export function FilterBar({ filters, facets }: { filters: Filters; facets: Facet
         </div>
       </div>
 
-      <div className="flex gap-2 border-t border-neutral-100 pt-3">
+      <div className="flex gap-2">
         <button
           type="submit"
           className="rounded bg-brand-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-brand-700"
