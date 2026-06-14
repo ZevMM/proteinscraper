@@ -18,9 +18,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link href="/" className="text-lg font-bold tracking-tight">
               Supp<span className="text-brand-600">Search</span>
             </Link>
-            <span className="hidden text-sm text-neutral-500 sm:inline">
-              Compare protein supplements by what matters
-            </span>
+            <a
+              href="mailto:ryan@grovecare.co?subject=SuppSearch%20feedback"
+              className="text-sm font-medium text-brand-700 hover:underline"
+            >
+              Feedback?
+            </a>
           </div>
         </header>
         <main className="mx-auto max-w-7xl px-4 py-6">{children}</main>
