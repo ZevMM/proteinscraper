@@ -9,7 +9,6 @@ export interface Filters {
   source?: string;
   inStockOnly: boolean;
   maxPriceCents?: number;
-  minProtein?: number;
   metric: MetricKey;
   /** "best" = sort so the most desirable values come first. */
   order: "best" | "worst";
@@ -38,17 +37,16 @@ function all(value: string | string[] | undefined): string[] {
 export function parseFilters(params: RawParams): Filters {
   const metricParam = first(params.metric);
   const maxPrice = first(params.maxPrice);
-  const minProtein = first(params.minProtein);
   return {
     q: first(params.q),
     brand: first(params.brand),
     source: first(params.source),
     inStockOnly: first(params.inStock) === "1",
     maxPriceCents: maxPrice ? Math.round(Number(maxPrice) * 100) : undefined,
-    minProtein: minProtein ? Number(minProtein) : undefined,
     metric: isMetricKey(metricParam) ? metricParam : DEFAULT_METRIC,
     order: first(params.order) === "worst" ? "worst" : "best",
-    view: first(params.view) === "all" ? "all" : "grouped",
+    // Always one row per product; the "all offers" view was removed from the UI.
+    view: "grouped",
     dietary: all(params.dietary),
     allergenFree: all(params.allergenFree),
     noArtificial: first(params.noArtificial) === "1",
@@ -65,7 +63,6 @@ export function buildQuery(filters: Filters): {
   if (filters.inStockOnly) where.inStock = true;
   if (filters.brand) where.brandName = filters.brand;
   if (filters.source) where.sourceSlug = filters.source;
-  if (filters.minProtein != null) where.proteinG = { gte: filters.minProtein };
   if (filters.maxPriceCents != null) where.priceCents = { lte: filters.maxPriceCents };
   if (filters.q) {
     where.OR = [

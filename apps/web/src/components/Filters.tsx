@@ -52,18 +52,6 @@ export function FilterBar({ filters, facets }: { filters: Filters; facets: Facet
       </label>
 
       <label className="flex flex-col gap-1 text-xs font-medium text-neutral-600">
-        View
-        <select
-          name="view"
-          defaultValue={filters.view}
-          className="rounded border border-neutral-300 px-2 py-1.5 text-sm text-neutral-900"
-        >
-          <option value="grouped">By product (best offer)</option>
-          <option value="all">All offers</option>
-        </select>
-      </label>
-
-      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-600">
         Brand
         <select
           name="brand"
@@ -103,18 +91,6 @@ export function FilterBar({ filters, facets }: { filters: Filters; facets: Facet
           min="0"
           step="1"
           defaultValue={filters.maxPriceCents != null ? filters.maxPriceCents / 100 : ""}
-          className="rounded border border-neutral-300 px-2 py-1.5 text-sm text-neutral-900"
-        />
-      </label>
-
-      <label className="flex flex-col gap-1 text-xs font-medium text-neutral-600">
-        Min protein/serving (g)
-        <input
-          type="number"
-          name="minProtein"
-          min="0"
-          step="1"
-          defaultValue={filters.minProtein ?? ""}
           className="rounded border border-neutral-300 px-2 py-1.5 text-sm text-neutral-900"
         />
       </label>
