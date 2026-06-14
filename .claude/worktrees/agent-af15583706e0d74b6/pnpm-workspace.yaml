@@ -1,0 +1,11 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# Allow Prisma's postinstall scripts (engine download + client generation).
+allowBuilds:
+  '@prisma/client': true
+  '@prisma/engines': true
+  prisma: true
+  # Not using next/image; skip sharp's native build.
+  sharp: false

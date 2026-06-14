@@ -22,7 +22,6 @@ from urllib.parse import quote
 
 from ..categorize import classify_category
 from ..config import get_settings
-from ..identity import slugify
 from ..models import ProductRecord, VariantRecord
 from ..units import is_multipack, parse_container_size_grams, to_cents
 from .base import Connector
@@ -194,8 +193,7 @@ class KrogerConnector(Connector):
             compare_at_price_cents=compare_at,
             nutrition=None,  # filled by Open Food Facts enrichment via UPC
         )
-        # Canonical Kroger product URL: /p/{name-slug}/{productId}.
-        url = f"https://www.kroger.com/p/{slugify(name) or 'product'}/{product_id}"
+        url = f"https://www.kroger.com/p/x/{product_id}"
         categories = item.get("categories")
         cat_text = " ".join(categories) if isinstance(categories, list) else ""
         return ProductRecord(

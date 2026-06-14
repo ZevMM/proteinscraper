@@ -1,0 +1,301 @@
+# Seed sources for the MVP: US direct-to-consumer protein brands on Shopify.
+# Each exposes a public /products.json feed (no API key, ToS-friendly).
+# `enabled: false` keeps a source defined but out of scheduled runs.
+#
+# config keys (all optional):
+#   max_pages          int    pages of /products.json to fetch (250 products/page)
+#   include_keywords   [str]  product must match one (default: ["protein"])
+#   exclude_keywords   [str]  product must match none
+
+sources:
+  - slug: kaged
+    name: Kaged
+    type: shopify
+    base_url: https://www.kaged.com
+    config:
+      max_pages: 3
+
+  - slug: naked-nutrition
+    name: Naked Nutrition
+    type: shopify
+    base_url: https://nakednutrition.com
+    config:
+      max_pages: 3
+
+  - slug: jacked-factory
+    name: Jacked Factory
+    type: shopify
+    base_url: https://www.jackedfactory.com
+    config:
+      max_pages: 3
+
+  - slug: bpn
+    name: Bare Performance Nutrition
+    type: shopify
+    base_url: https://bpnsupps.com
+    config:
+      max_pages: 3
+
+  - slug: promix
+    name: Promix Nutrition
+    type: shopify
+    base_url: https://promixnutrition.com
+    config:
+      max_pages: 3
+
+  - slug: transparent-labs
+    name: Transparent Labs
+    type: shopify
+    base_url: https://www.transparentlabs.com
+    config:
+      max_pages: 3
+
+  - slug: gnarly
+    name: Gnarly Nutrition
+    type: shopify
+    base_url: https://www.gognarly.com
+    config:
+      max_pages: 3
+
+  - slug: ryse
+    name: RYSE Supplements
+    type: shopify
+    base_url: https://rysesupps.com
+    config:
+      max_pages: 3
+
+  - slug: 1st-phorm
+    name: 1st Phorm
+    type: shopify
+    base_url: https://1stphorm.com
+    config:
+      max_pages: 4
+
+  - slug: muscle-feast
+    name: Muscle Feast
+    type: shopify
+    base_url: https://www.musclefeast.com
+    config:
+      max_pages: 3
+
+  - slug: true-nutrition
+    name: True Nutrition
+    type: shopify
+    base_url: https://truenutrition.com
+    config:
+      max_pages: 3
+
+  - slug: nutrabio
+    name: NutraBio
+    type: shopify
+    base_url: https://nutrabio.com
+    config:
+      max_pages: 4
+
+  - slug: ascent
+    name: Ascent Protein
+    type: shopify
+    base_url: https://www.ascentprotein.com
+    config:
+      max_pages: 3
+
+  - slug: swolverine
+    name: Swolverine
+    type: shopify
+    base_url: https://www.swolverine.com
+    config:
+      max_pages: 3
+
+  - slug: earth-fed-muscle
+    name: Earth Fed Muscle
+    type: shopify
+    base_url: https://www.earthfedmuscle.com
+    config:
+      max_pages: 3
+
+  - slug: ghost
+    name: Ghost Lifestyle
+    type: shopify
+    base_url: https://www.ghostlifestyle.com
+    config:
+      max_pages: 4
+
+  - slug: raw-nutrition
+    name: RAW Nutrition
+    type: shopify
+    base_url: https://getrawnutrition.com
+    config:
+      max_pages: 3
+
+  - slug: axe-sledge
+    name: Axe & Sledge
+    type: shopify
+    base_url: https://axeandsledge.com
+    config:
+      max_pages: 3
+
+  - slug: orgain
+    name: Orgain
+    type: shopify
+    base_url: https://www.orgain.com
+    config:
+      max_pages: 1
+
+  - slug: kos
+    name: KOS
+    type: shopify
+    base_url: https://kos.com
+    config:
+      max_pages: 1
+
+  - slug: owyn
+    name: OWYN
+    type: shopify
+    base_url: https://liveowyn.com
+    config:
+      max_pages: 1
+
+  - slug: gainful
+    name: Gainful
+    type: shopify
+    base_url: https://gainful.com
+    config:
+      max_pages: 1
+
+  - slug: innermost
+    name: Innermost
+    type: shopify
+    base_url: https://liveinnermost.com
+    config:
+      max_pages: 1
+
+  - slug: jocko-fuel
+    name: Jocko Fuel
+    type: shopify
+    base_url: https://jockofuel.com
+    config:
+      max_pages: 1
+
+  - slug: alpha-lion
+    name: Alpha Lion
+    type: shopify
+    base_url: https://alphalion.com
+    config:
+      max_pages: 1
+
+  - slug: redcon1
+    name: REDCON1
+    type: shopify
+    base_url: https://redcon1.com
+    config:
+      max_pages: 1
+
+  - slug: momentous
+    name: Momentous
+    type: shopify
+    base_url: https://livemomentous.com
+    config:
+      max_pages: 1
+
+  # --- Additional US Shopify stores (verified /products.json, USD) -----------
+  - slug: levels
+    name: Levels
+    type: shopify
+    base_url: https://levelsprotein.com
+    config:
+      max_pages: 1
+
+  - slug: nutricost
+    name: Nutricost
+    type: shopify
+    base_url: https://nutricost.com
+    config:
+      max_pages: 3
+
+  - slug: sixstar
+    name: Six Star
+    type: shopify
+    base_url: https://www.sixstarpro.com
+    config:
+      max_pages: 1
+
+  - slug: just-ingredients
+    name: Just Ingredients
+    type: shopify
+    base_url: https://justingredients.com
+    config:
+      max_pages: 2
+
+  - slug: onnit
+    name: Onnit
+    type: shopify
+    base_url: https://www.onnit.com
+    config:
+      max_pages: 1
+
+  # Multi-brand reseller on Shopify (USD). Carries mass brands (GHOST, Nutrex,
+  # MuscleMeds, ...) via a real `vendor` field, broadening brand coverage.
+  - slug: bodybuilding-shop
+    name: Bodybuilding.com
+    type: shopify
+    base_url: https://shop.bodybuilding.com
+    config:
+      max_pages: 2
+
+  # Kroger via the official Products API (OAuth client-credentials, free).
+  # Returns authentic per-store grocery prices + a 13-digit base UPC (enables
+  # cross-source dedup + Open Food Facts nutrition). No-ops until
+  # KROGER_CLIENT_ID + KROGER_CLIENT_SECRET are set. Price requires a store, so
+  # the connector resolves one from `zip_code`.
+  - slug: kroger
+    name: Kroger
+    type: kroger
+    base_url: https://www.kroger.com
+    config:
+      max_pages: 2
+      zip_code: "45202"
+
+  # eBay via the official Browse API (OAuth client-credentials application token).
+  # Restricted to brand-new, fixed-price, reputable-seller listings for price
+  # accuracy. getItem recovers GTIN/UPC for dedup. enabled:false keeps it out of
+  # the daily --all run (rate/quota-sensitive); run via `run --source ebay`.
+  # No-ops until EBAY_CLIENT_ID + EBAY_CLIENT_SECRET are set.
+  - slug: ebay
+    name: eBay
+    type: ebay
+    base_url: https://www.ebay.com
+    enabled: false
+    config:
+      max_pages: 1
+      fetch_details: true
+
+  # Walmart via the official IO Affiliate API. No-ops until WALMART_CONSUMER_ID +
+  # WALMART_PRIVATE_KEY (+ WALMART_KEY_VERSION) are set in the environment.
+  - slug: walmart
+    name: Walmart
+    type: walmart
+    base_url: https://www.walmart.com
+    # queries omitted -> uses the connector's broadened default set.
+    config:
+      max_pages: 2
+
+  # Amazon via the RapidAPI "Real-Time Amazon Data" provider. enabled:false keeps
+  # it out of the daily --all run; a separate weekly workflow runs it explicitly
+  # (it bills per request). No-ops until RAPIDAPI_KEY is set.
+  # Search returns ~48 results/page and each product costs a 2nd call for
+  # details, so keep max_pages low to control RapidAPI cost (~1 page x 4
+  # queries x 2 calls ~= 380 requests/run).
+  - slug: amazon
+    name: Amazon
+    type: amazon
+    base_url: https://www.amazon.com
+    enabled: false
+    config:
+      max_pages: 1
+      country: US
+      fetch_details: true
+      queries:
+        - whey protein powder
+        - plant protein powder
+        - casein protein powder
+        - protein isolate powder

@@ -1,0 +1,35 @@
+{
+  "id": 111111,
+  "title": "Whey Protein Powder",
+  "handle": "whey-protein-powder",
+  "vendor": "Legion",
+  "product_type": "Protein",
+  "tags": ["whey", "protein", "muscle building"],
+  "body_html": "<div><h2>Supplement Facts</h2><p>Serving Size 1 Scoop (33 g)<br>Servings Per Container 30<br>Calories 120<br>Total Fat 1.5g<br>Total Carbohydrate 5g<br>Total Sugars 1g<br>Protein 22g</p></div>",
+  "options": [
+    { "name": "Flavor", "position": 1 },
+    { "name": "Size", "position": 2 }
+  ],
+  "variants": [
+    {
+      "id": 222221,
+      "title": "Chocolate / 2.2 lb",
+      "option1": "Chocolate",
+      "option2": "2.2 lb",
+      "price": "49.99",
+      "available": true,
+      "grams": 998,
+      "sku": "WHEY-CHOC-2.2"
+    },
+    {
+      "id": 222222,
+      "title": "Vanilla / 2.2 lb",
+      "option1": "Vanilla",
+      "option2": "2.2 lb",
+      "price": "49.99",
+      "available": false,
+      "grams": 998,
+      "sku": "WHEY-VAN-2.2"
+    }
+  ]
+}

@@ -27,11 +27,7 @@ def test_build_record_from_product():
     assert record.brand_name == "Optimum Nutrition"
     assert record.category == "whey"
     assert record.source_sku == "0074893702401"
-    assert record.url == (
-        "https://www.kroger.com/p/"
-        "optimum-nutrition-gold-standard-100-whey-protein-powder-double-rich-chocolate"
-        "/0074893702401"
-    )
+    assert record.url == "https://www.kroger.com/p/x/0074893702401"
     assert len(record.variants) == 1
 
     v = record.variants[0]

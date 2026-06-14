@@ -1,0 +1,15 @@
+{
+  "product_name": "Gold Standard 100% Whey",
+  "brands": "Optimum Nutrition",
+  "serving_quantity": 31,
+  "serving_size": "31 g (1 scoop)",
+  "product_quantity": 907,
+  "nutriments": {
+    "proteins_serving": 24,
+    "fat_serving": 1.5,
+    "carbohydrates_serving": 3,
+    "sugars_serving": 1,
+    "energy-kcal_serving": 120,
+    "proteins_100g": 77.4
+  }
+}
