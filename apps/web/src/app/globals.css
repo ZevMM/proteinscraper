@@ -3,7 +3,9 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: light dark;
+  /* The UI is light-themed throughout; force light so native form controls
+     (inputs, selects, scrollbars) don't render dark on dark-mode systems. */
+  color-scheme: light;
 }
 
 body {

@@ -91,6 +91,7 @@ export default async function HomePage({
                     </th>
                   ) : null}
                   <th className="px-3 py-2 text-right">Protein/serv</th>
+                  <th className="px-3 py-2 text-right">Protein/cal</th>
                   <th className={thSort("proteinPerDollar")}>Protein/$</th>
                   <th className={thSort("costPer30gProtein")}>$/30g protein</th>
                 </tr>
@@ -159,6 +160,9 @@ export default async function HomePage({
                       ) : null}
                       <td className="px-3 py-2 text-right text-neutral-600">
                         {r.proteinG != null ? `${r.proteinG} g` : "—"}
+                      </td>
+                      <td className="px-3 py-2 text-right text-neutral-600">
+                        {formatProteinPerCal(proteinPerCal(r))}
                       </td>
                       <td className={tdSort("proteinPerDollar")}>
                         {METRICS.proteinPerDollar.format(r.proteinPerDollar)}
@@ -251,6 +255,14 @@ export default async function HomePage({
                     </div>
                     <div className="flex flex-col rounded bg-neutral-50 p-2">
                       <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
+                        Protein / cal
+                      </span>
+                      <span className="text-sm font-semibold text-neutral-700">
+                        {formatProteinPerCal(proteinPerCal(r))}
+                      </span>
+                    </div>
+                    <div className="flex flex-col rounded bg-neutral-50 p-2">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
                         Retailer
                       </span>
                       <span className="truncate text-sm font-semibold text-neutral-700">
@@ -285,6 +297,16 @@ export default async function HomePage({
 
 function numeric(value: unknown): number | null {
   return typeof value === "number" ? value : null;
+}
+
+/** Grams of protein per calorie (per serving); higher = leaner protein. */
+function proteinPerCal(r: { proteinG: number | null; caloriesKcal: number | null }): number | null {
+  if (r.proteinG == null || !r.caloriesKcal) return null;
+  return r.proteinG / r.caloriesKcal;
+}
+
+function formatProteinPerCal(value: number | null): string {
+  return value == null ? "—" : `${value.toFixed(2)} g/cal`;
 }
 
 /** Build a homepage URL preserving current filters but setting the page number. */
