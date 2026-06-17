@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { FilterBar } from "@/components/Filters";
-import { formatPrice, formatSize, salePercent } from "@/lib/format";
+import { currencyForMarket, currencySymbol, formatPrice, formatSize, salePercent } from "@/lib/format";
 import { METRICS, type MetricKey } from "@/lib/metrics";
 import {
   getFacets,
@@ -27,11 +27,13 @@ export default async function HomePage({
   const page = Math.max(1, Number.parseInt(pageParam ?? "1", 10) || 1);
   const [{ rows, total }, facets] = await Promise.all([
     getGroupedListings(filters, page, PAGE_SIZE),
-    getFacets(),
+    getFacets(filters.market),
   ]);
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const firstShown = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
   const lastShown = Math.min(page * PAGE_SIZE, total);
+  const currency = currencyForMarket(filters.market);
+  const ccy = currencySymbol(currency);
   const activeMetric = METRICS[filters.metric];
   // Metrics that already have a dedicated column in the table. Sorting by one of
   // these just highlights that column instead of adding a duplicate; any other
@@ -92,8 +94,8 @@ export default async function HomePage({
                   ) : null}
                   <th className="px-3 py-2 text-right">Protein/serv</th>
                   <th className="px-3 py-2 text-right">Protein/cal</th>
-                  <th className={thSort("proteinPerDollar")}>Protein/$</th>
-                  <th className={thSort("costPer30gProtein")}>$/30g protein</th>
+                  <th className={thSort("proteinPerDollar")}>Protein/{ccy}</th>
+                  <th className={thSort("costPer30gProtein")}>{ccy}/30g protein</th>
                 </tr>
               </thead>
               <tbody>
@@ -134,7 +136,7 @@ export default async function HomePage({
                         )}
                       </td>
                       <td className="px-3 py-2 text-right text-neutral-600">
-                        {formatSize(r.sizeG)}
+                        {formatSize(r.sizeG, filters.market)}
                       </td>
                       <td
                         className={
@@ -143,11 +145,11 @@ export default async function HomePage({
                             : "px-3 py-2 text-right"
                         }
                       >
-                        <span className="font-medium">{formatPrice(r.priceCents)}</span>
+                        <span className="font-medium">{formatPrice(r.priceCents, r.currency)}</span>
                         {off != null ? (
                           <div className="text-xs">
                             <span className="text-neutral-400 line-through">
-                              {formatPrice(r.compareAtPriceCents)}
+                              {formatPrice(r.compareAtPriceCents, r.currency)}
                             </span>{" "}
                             <span className="font-medium text-rose-600">-{off}%</span>
                           </div>
@@ -155,7 +157,7 @@ export default async function HomePage({
                       </td>
                       {showExtraColumn ? (
                         <td className="bg-neutral-50 px-3 py-2 text-right font-semibold text-neutral-900">
-                          {activeMetric.format(numeric(r[activeMetric.field as keyof typeof r]))}
+                          {activeMetric.format(numeric(r[activeMetric.field as keyof typeof r]), currency)}
                         </td>
                       ) : null}
                       <td className="px-3 py-2 text-right text-neutral-600">
@@ -165,10 +167,10 @@ export default async function HomePage({
                         {formatProteinPerCal(proteinPerCal(r))}
                       </td>
                       <td className={tdSort("proteinPerDollar")}>
-                        {METRICS.proteinPerDollar.format(r.proteinPerDollar)}
+                        {METRICS.proteinPerDollar.format(r.proteinPerDollar, currency)}
                       </td>
                       <td className={tdSort("costPer30gProtein")}>
-                        {METRICS.costPer30gProtein.format(r.costPer30gProtein)}
+                        {METRICS.costPer30gProtein.format(r.costPer30gProtein, currency)}
                       </td>
                     </tr>
                   );
@@ -205,16 +207,16 @@ export default async function HomePage({
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-bold text-neutral-900">{formatPrice(r.priceCents)}</div>
+                      <div className="font-bold text-neutral-900">{formatPrice(r.priceCents, r.currency)}</div>
                       {off != null ? (
                         <div className="text-xs">
                           <span className="text-neutral-400 line-through">
-                            {formatPrice(r.compareAtPriceCents)}
+                            {formatPrice(r.compareAtPriceCents, r.currency)}
                           </span>{" "}
                           <span className="font-bold text-rose-600">-{off}%</span>
                         </div>
                       ) : null}
-                      <div className="text-xs text-neutral-500">{formatSize(r.sizeG)}</div>
+                      <div className="text-xs text-neutral-500">{formatSize(r.sizeG, filters.market)}</div>
                     </div>
                   </div>
 
@@ -225,7 +227,7 @@ export default async function HomePage({
                           {activeMetric.label}
                         </span>
                         <span className="text-sm font-bold text-neutral-900">
-                          {activeMetric.format(numeric(r[activeMetric.field as keyof typeof r]))}
+                          {activeMetric.format(numeric(r[activeMetric.field as keyof typeof r]), currency)}
                         </span>
                       </div>
                     ) : null}
@@ -235,10 +237,10 @@ export default async function HomePage({
                       }`}
                     >
                       <span className="text-[10px] font-semibold uppercase tracking-wider text-brand-700">
-                        Protein / $
+                        Protein / {ccy}
                       </span>
                       <span className="text-sm font-bold text-brand-900">
-                        {METRICS.proteinPerDollar.format(r.proteinPerDollar)}
+                        {METRICS.proteinPerDollar.format(r.proteinPerDollar, currency)}
                       </span>
                     </div>
                     <div
@@ -247,10 +249,10 @@ export default async function HomePage({
                       }`}
                     >
                       <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
-                        $/30g Protein
+                        {ccy}/30g Protein
                       </span>
                       <span className="text-sm font-semibold text-neutral-700">
-                        {METRICS.costPer30gProtein.format(r.costPer30gProtein)}
+                        {METRICS.costPer30gProtein.format(r.costPer30gProtein, currency)}
                       </span>
                     </div>
                     <div className="flex flex-col rounded bg-neutral-50 p-2">

@@ -261,6 +261,7 @@ view ListingMetrics {
   sourceId    String  @map("source_id")
   sourceSlug  String  @map("source_slug")
   sourceType  String  @map("source_type")
+  market      String  @map("market")
   brandName   String  @map("brand_name")
   productName String  @map("product_name")
   category    String? @map("category")

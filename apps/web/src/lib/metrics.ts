@@ -4,6 +4,8 @@
  */
 import type { Prisma } from "@proteinscraper/db";
 
+import { currencySymbol, formatPrice } from "./format";
+
 export type MetricKey =
   | "proteinPerDollar"
   | "costPer30gProtein"
@@ -23,10 +25,12 @@ export interface MetricDef {
   higherIsBetter: boolean;
   /** Most sort metrics only make sense once nutrition is known. */
   requiresNutrition: boolean;
-  format: (value: number | null) => string;
+  /** `currency` is the active market's ISO code (USD/GBP/INR) for money + per-cost metrics. */
+  format: (value: number | null, currency?: string) => string;
 }
 
-const money = (v: number | null) => (v == null ? "—" : `$${v.toFixed(2)}`);
+const money = (v: number | null, currency = "USD") =>
+  v == null ? "—" : formatPrice(Math.round(v * 100), currency);
 const num = (digits: number) => (v: number | null) =>
   v == null ? "—" : v.toFixed(digits);
 
@@ -37,7 +41,8 @@ export const METRICS: Record<MetricKey, MetricDef> = {
     label: "Protein per dollar",
     higherIsBetter: true,
     requiresNutrition: true,
-    format: (v) => (v == null ? "—" : `${v.toFixed(1)} g/$`),
+    format: (v, currency = "USD") =>
+      v == null ? "—" : `${v.toFixed(1)} g/${currencySymbol(currency)}`,
   },
   costPer30gProtein: {
     key: "costPer30gProtein",
@@ -93,7 +98,7 @@ export const METRICS: Record<MetricKey, MetricDef> = {
     label: "Price",
     higherIsBetter: false,
     requiresNutrition: false,
-    format: (v) => (v == null ? "—" : `$${(v / 100).toFixed(2)}`),
+    format: (v, currency = "USD") => (v == null ? "—" : formatPrice(v, currency)),
   },
 };
 

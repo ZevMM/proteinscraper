@@ -4,6 +4,8 @@ import { ARTIFICIAL_SWEETENERS } from "./facets";
 import { DEFAULT_METRIC, METRICS, isMetricKey, type MetricKey } from "./metrics";
 
 export interface Filters {
+  /** Active market (US/UK/IN); listings are always filtered to exactly one. */
+  market: string;
   q?: string;
   brands: string[];
   sources: string[];
@@ -34,10 +36,14 @@ function all(value: string | string[] | undefined): string[] {
   return (Array.isArray(value) ? value : [value]).filter((v) => v.length > 0);
 }
 
+const MARKETS = new Set(["US", "UK", "IN"]);
+
 export function parseFilters(params: RawParams): Filters {
   const metricParam = first(params.metric);
   const maxPrice = first(params.maxPrice);
+  const marketParam = first(params.market);
   return {
+    market: marketParam && MARKETS.has(marketParam) ? marketParam : "US",
     q: first(params.q),
     brands: all(params.brand),
     sources: all(params.source),
@@ -58,7 +64,7 @@ export function buildQuery(filters: Filters): {
   orderBy: Prisma.ListingMetricsOrderByWithRelationInput[];
 } {
   const metric = METRICS[filters.metric];
-  const where: Prisma.ListingMetricsWhereInput = {};
+  const where: Prisma.ListingMetricsWhereInput = { market: filters.market };
 
   if (filters.inStockOnly) where.inStock = true;
   if (filters.brands.length) where.brandName = { in: filters.brands };
@@ -155,14 +161,16 @@ export interface Facets {
   sources: string[];
 }
 
-export async function getFacets(): Promise<Facets> {
+export async function getFacets(market = "US"): Promise<Facets> {
   const [brands, sources] = await Promise.all([
     prisma.listingMetrics.findMany({
+      where: { market },
       distinct: ["brandName"],
       select: { brandName: true },
       orderBy: { brandName: "asc" },
     }),
     prisma.listingMetrics.findMany({
+      where: { market },
       distinct: ["sourceSlug"],
       select: { sourceSlug: true },
       orderBy: { sourceSlug: "asc" },

@@ -1,5 +1,6 @@
 import { MultiSelect, type MultiSelectItem } from "@/components/MultiSelect";
 import { ALLERGEN_OPTIONS, DIETARY_OPTIONS } from "@/lib/facets";
+import { currencyForMarket, currencySymbol } from "@/lib/format";
 import { METRIC_LIST } from "@/lib/metrics";
 import type { Facets } from "@/lib/queries";
 import type { Filters } from "@/lib/queries";
@@ -48,9 +49,9 @@ export function FilterBar({ filters, facets }: { filters: Filters; facets: Facet
       method="get"
       className="flex flex-col gap-4 rounded-lg border border-neutral-200 bg-white p-4"
     >
-      {/* Primary controls: search + how results are ranked/capped. */}
+      {/* Primary controls: market + search + how results are ranked/capped. */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
-        <label className="flex flex-col gap-1 text-xs font-medium text-neutral-600 sm:col-span-2 lg:col-span-3">
+        <label className="flex flex-col gap-1 text-xs font-medium text-neutral-600 sm:col-span-2 lg:col-span-2">
           Search
           <input
             type="text"
@@ -59,6 +60,19 @@ export function FilterBar({ filters, facets }: { filters: Filters; facets: Facet
             placeholder="whey, vegan, brand…"
             className="rounded border border-neutral-300 px-2 py-1.5 text-sm text-neutral-900"
           />
+        </label>
+
+        <label className="flex flex-col gap-1 text-xs font-medium text-neutral-600">
+          Market
+          <select
+            name="market"
+            defaultValue={filters.market}
+            className="rounded border border-neutral-300 px-2 py-1.5 text-sm text-neutral-900"
+          >
+            <option value="US">United States ($)</option>
+            <option value="UK">United Kingdom (£)</option>
+            <option value="IN">India (₹)</option>
+          </select>
         </label>
 
         <label className="flex flex-col gap-1 text-xs font-medium text-neutral-600">
@@ -89,7 +103,7 @@ export function FilterBar({ filters, facets }: { filters: Filters; facets: Facet
         </label>
 
         <label className="flex flex-col gap-1 text-xs font-medium text-neutral-600">
-          Max price ($)
+          Max price ({currencySymbol(currencyForMarket(filters.market))})
           <input
             type="number"
             name="maxPrice"

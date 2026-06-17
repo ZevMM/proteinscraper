@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { PriceSparkline } from "@/components/PriceSparkline";
 import { ARTIFICIAL_SWEETENERS, facetLabel } from "@/lib/facets";
-import { formatPrice, formatSize, salePercent } from "@/lib/format";
+import { currencyForMarket, currencySymbol, formatPrice, formatSize, salePercent } from "@/lib/format";
 import { METRICS } from "@/lib/metrics";
 import { getProductDetail } from "@/lib/queries";
 
@@ -17,6 +17,10 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   const { rows, history } = detail;
   const best = rows[0];
   if (!best) notFound();
+
+  const market = best.market;
+  const currency = currencyForMarket(market);
+  const ccy = currencySymbol(currency);
 
   // Aggregate ingredient facts across all variants of this product.
   const uniq = (xs: string[]) => [...new Set(xs)];
@@ -140,8 +144,8 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                 <th className="px-4 py-2">Flavor</th>
                 <th className="px-4 py-2 text-right">Size</th>
                 <th className="px-4 py-2 text-right">Price</th>
-                <th className="px-4 py-2 text-right">Protein/$</th>
-                <th className="px-4 py-2 text-right">$/30g</th>
+                <th className="px-4 py-2 text-right">Protein/{ccy}</th>
+                <th className="px-4 py-2 text-right">{ccy}/30g</th>
                 <th className="px-4 py-2"></th>
               </tr>
             </thead>
@@ -150,17 +154,17 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                 <tr key={r.variantId} className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50">
                   <td className="px-4 py-2 text-neutral-600">{r.sourceSlug}</td>
                   <td className="px-4 py-2">{r.flavor ?? "—"}</td>
-                  <td className="px-4 py-2 text-right text-neutral-600">{formatSize(r.sizeG)}</td>
+                  <td className="px-4 py-2 text-right text-neutral-600">{formatSize(r.sizeG, r.market)}</td>
                   <td className="px-4 py-2 text-right">
-                    <span className="font-medium">{formatPrice(r.priceCents)}</span>
+                    <span className="font-medium">{formatPrice(r.priceCents, r.currency)}</span>
                     {salePercent(r.priceCents, r.compareAtPriceCents) != null ? (
                       <span className="ml-1 text-xs font-medium text-rose-600">
                         -{salePercent(r.priceCents, r.compareAtPriceCents)}%
                       </span>
                     ) : null}
                   </td>
-                  <td className="px-4 py-2 text-right">{METRICS.proteinPerDollar.format(r.proteinPerDollar)}</td>
-                  <td className="px-4 py-2 text-right">{METRICS.costPer30gProtein.format(r.costPer30gProtein)}</td>
+                  <td className="px-4 py-2 text-right">{METRICS.proteinPerDollar.format(r.proteinPerDollar, r.currency)}</td>
+                  <td className="px-4 py-2 text-right">{METRICS.costPer30gProtein.format(r.costPer30gProtein, r.currency)}</td>
                   <td className="px-4 py-2 text-right">
                     <a
                       href={r.url}
@@ -185,11 +189,11 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                 <div>
                   <div className="font-bold text-neutral-900">{r.flavor ?? "Unflavored / Original"}</div>
                   <div className="text-sm text-neutral-500">
-                    {r.sourceSlug} · {formatSize(r.sizeG)}
+                    {r.sourceSlug} · {formatSize(r.sizeG, r.market)}
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold text-neutral-900">{formatPrice(r.priceCents)}</div>
+                  <div className="font-bold text-neutral-900">{formatPrice(r.priceCents, r.currency)}</div>
                   {salePercent(r.priceCents, r.compareAtPriceCents) != null ? (
                     <div className="text-xs font-bold text-rose-600">
                       -{salePercent(r.priceCents, r.compareAtPriceCents)}%
@@ -201,18 +205,18 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
               <div className="grid grid-cols-2 gap-2">
                 <div className="flex flex-col rounded bg-neutral-50 p-2">
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
-                    Protein / $
+                    Protein / {ccy}
                   </span>
                   <span className="text-sm font-bold text-neutral-900">
-                    {METRICS.proteinPerDollar.format(r.proteinPerDollar)}
+                    {METRICS.proteinPerDollar.format(r.proteinPerDollar, r.currency)}
                   </span>
                 </div>
                 <div className="flex flex-col rounded bg-neutral-50 p-2">
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
-                    $/30g Protein
+                    {ccy}/30g Protein
                   </span>
                   <span className="text-sm font-semibold text-neutral-700">
-                    {METRICS.costPer30gProtein.format(r.costPer30gProtein)}
+                    {METRICS.costPer30gProtein.format(r.costPer30gProtein, r.currency)}
                   </span>
                 </div>
               </div>
