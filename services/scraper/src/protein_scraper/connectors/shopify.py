@@ -14,6 +14,7 @@ from typing import Any
 from ..categorize import classify_category
 from ..extract.nutrition import html_to_text, merge_nutrition, parse_nutrition_text
 from ..ingredients import derive_facts, extract_ingredients_text
+from ..markets import currency_for
 from ..models import IngredientFactsRecord, NutritionRecord, ProductRecord, VariantRecord
 from ..units import clean_flavor, parse_servings, parse_weight_to_grams, to_cents
 from .base import Connector
@@ -161,7 +162,7 @@ class ShopifyConnector(Connector):
                     size_g=size_g,
                     size_label=size_label,
                     price_cents=price_cents,
-                    currency="USD",
+                    currency=currency_for(self.market),
                     in_stock=bool(variant.get("available", True)),
                     compare_at_price_cents=on_sale,
                     nutrition=self._variant_nutrition(nutrition, product, variant, size_g),

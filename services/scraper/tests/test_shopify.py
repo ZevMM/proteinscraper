@@ -23,6 +23,14 @@ def _connector() -> ShopifyConnector:
 
 
 @pytest.mark.asyncio
+async def test_india_market_prices_in_inr():
+    source = {**SOURCE, "slug": "nakpro", "market": "IN", "baseUrl": "https://nakpro.com"}
+    record = await ShopifyConnector(source, fetcher=None, llm=None).extract(FIXTURE)
+    assert record is not None
+    assert all(v.currency == "INR" for v in record.variants)
+
+
+@pytest.mark.asyncio
 async def test_extract_builds_product_record():
     record = await _connector().extract(FIXTURE)
     assert record is not None

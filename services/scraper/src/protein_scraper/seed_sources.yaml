@@ -330,3 +330,65 @@ sources:
         - plant protein powder
         - casein protein powder
         - protein isolate powder
+
+  # Amazon India — same RapidAPI provider, country=IN (prices in INR). Shares the
+  # exhausted RapidAPI quota with the other Amazon markets, so it stays disabled
+  # until the plan is upgraded; seeded for readiness.
+  - slug: amazon-in
+    name: Amazon India
+    type: amazon
+    market: IN
+    base_url: https://www.amazon.in
+    enabled: false
+    config:
+      max_pages: 1
+      country: IN
+      fetch_details: true
+      queries:
+        - whey protein powder
+        - plant protein powder
+        - casein protein powder
+        - protein isolate powder
+
+  # India — public Shopify /products.json feeds (INR). Free + ToS-friendly, so
+  # enabled for the daily --all run like the US Shopify brands. The default
+  # "protein" keyword filter keeps only protein products from broader catalogs.
+  - slug: origin-nutrition
+    name: Origin Nutrition
+    type: shopify
+    market: IN
+    base_url: https://originnutrition.in
+    config:
+      max_pages: 3
+
+  - slug: as-it-is-nutrition
+    name: AS-IT-IS Nutrition
+    type: shopify
+    market: IN
+    base_url: https://asitisnutrition.com
+    config:
+      max_pages: 3
+
+  - slug: nakpro
+    name: Nakpro
+    type: shopify
+    market: IN
+    base_url: https://nakpro.com
+    config:
+      max_pages: 3
+
+  - slug: oziva
+    name: OZiva
+    type: shopify
+    market: IN
+    base_url: https://oziva.in
+    config:
+      max_pages: 3
+
+  - slug: wellversed
+    name: Wellversed
+    type: shopify
+    market: IN
+    base_url: https://wellversed.in
+    config:
+      max_pages: 3
