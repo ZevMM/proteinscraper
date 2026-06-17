@@ -269,6 +269,18 @@ sources:
       max_pages: 1
       fetch_details: true
 
+  # eBay UK — same Browse API + keys, EBAY_GB marketplace (prices in GBP).
+  - slug: ebay-uk
+    name: eBay UK
+    type: ebay
+    market: UK
+    base_url: https://www.ebay.co.uk
+    enabled: false
+    config:
+      marketplace: EBAY_GB
+      max_pages: 1
+      fetch_details: true
+
   # Walmart via the official IO Affiliate API. No-ops until WALMART_CONSUMER_ID +
   # WALMART_PRIVATE_KEY (+ WALMART_KEY_VERSION) are set in the environment.
   - slug: walmart
@@ -293,6 +305,25 @@ sources:
     config:
       max_pages: 1
       country: US
+      fetch_details: true
+      queries:
+        - whey protein powder
+        - plant protein powder
+        - casein protein powder
+        - protein isolate powder
+
+  # Amazon UK — same RapidAPI provider, country=GB (prices in GBP). Billed per
+  # request, so run weekly via its own workflow (enabled:false keeps it out of
+  # the daily --all sweep).
+  - slug: amazon-uk
+    name: Amazon UK
+    type: amazon
+    market: UK
+    base_url: https://www.amazon.co.uk
+    enabled: false
+    config:
+      max_pages: 1
+      country: GB
       fetch_details: true
       queries:
         - whey protein powder

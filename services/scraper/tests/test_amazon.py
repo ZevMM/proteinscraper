@@ -39,6 +39,27 @@ async def test_extract_search_only():
     assert v.size_g == pytest.approx(2267.96, abs=1.0)
     assert v.upc is None  # only available via product-details
     assert v.nutrition is None
+    assert v.currency == "USD"
+
+
+@pytest.mark.asyncio
+async def test_uk_market_prices_in_gbp():
+    source = {
+        "id": "00000000-0000-0000-0000-000000000000",
+        "slug": "amazon-uk",
+        "name": "Amazon UK",
+        "type": "amazon",
+        "market": "UK",
+        "baseUrl": "https://www.amazon.co.uk",
+        "config": {"fetch_details": False, "country": "GB"},
+    }
+    item = {**SEARCH_ITEM, "product_price": "£49.99", "product_url": ""}
+    record = await AmazonConnector(source, fetcher=None, llm=None).extract(item)
+    assert record is not None
+    v = record.variants[0]
+    assert v.price_cents == 4999
+    assert v.currency == "GBP"
+    assert "amazon.co.uk" in record.url  # URL fallback uses the market domain
 
 
 def test_find_upc_from_product_information():

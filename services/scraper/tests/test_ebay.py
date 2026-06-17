@@ -19,8 +19,21 @@ SOURCE = {
 }
 
 
+SOURCE_UK = {
+    **SOURCE,
+    "slug": "ebay-uk",
+    "market": "UK",
+    "baseUrl": "https://www.ebay.co.uk",
+    "config": {"marketplace": "EBAY_GB"},
+}
+
+
 def _connector() -> EbayConnector:
     return EbayConnector(SOURCE, fetcher=None, llm=None)
+
+
+def _connector_uk() -> EbayConnector:
+    return EbayConnector(SOURCE_UK, fetcher=None, llm=None)
 
 
 def test_build_record_from_summary():
@@ -43,6 +56,24 @@ def test_non_usd_skipped():
     summary = json.loads(json.dumps(SUMMARY))
     summary["price"] = {"value": "59.99", "currency": "GBP"}
     assert _connector().build_record(summary) is None
+
+
+def test_uk_market_accepts_gbp_and_uses_gb_marketplace():
+    c = _connector_uk()
+    assert c.market == "UK"
+    assert c._marketplace == "EBAY_GB"
+    summary = json.loads(json.dumps(SUMMARY))
+    summary["price"] = {"value": "59.99", "currency": "GBP"}
+    record = c.build_record(summary)
+    assert record is not None
+    v = record.variants[0]
+    assert v.price_cents == 5999
+    assert v.currency == "GBP"
+
+
+def test_uk_market_skips_usd():
+    summary = json.loads(json.dumps(SUMMARY))  # fixture price is USD
+    assert _connector_uk().build_record(summary) is None
 
 
 def test_no_marketing_price_no_sale():

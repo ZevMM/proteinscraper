@@ -20,6 +20,7 @@ from urllib.parse import quote
 from ..categorize import classify_category
 from ..config import get_settings
 from ..ingredients import derive_facts, extract_ingredients_text
+from ..markets import AMAZON_DOMAIN, currency_for
 from ..models import (
     ExtractionMethod,
     IngredientFactsRecord,
@@ -142,7 +143,7 @@ class AmazonConnector(Connector):
         url = (
             details.get("product_url")
             or ref.get("product_url")
-            or f"https://www.amazon.com/dp/{asin}"
+            or f"https://www.{AMAZON_DOMAIN.get(self.market, 'amazon.com')}/dp/{asin}"
         )
         availability = str(details.get("product_availability", "")).lower()
         in_stock = "unavailable" not in availability and "out of stock" not in availability
@@ -153,7 +154,7 @@ class AmazonConnector(Connector):
             size_g=size_g,
             size_label=None,
             price_cents=price_cents,
-            currency="USD",
+            currency=currency_for(self.market),
             in_stock=in_stock,
             upc=upc,
             compare_at_price_cents=original if original and original > price_cents else None,

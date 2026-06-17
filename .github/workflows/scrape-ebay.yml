@@ -33,9 +33,9 @@ jobs:
       - name: Seed sources (ensures the ebay source exists)
         working-directory: services/scraper
         run: uv run scraper seed
-      - name: Scrape eBay
+      - name: Scrape eBay (US + UK)
         working-directory: services/scraper
-        run: uv run scraper run --source ebay -v
+        run: uv run scraper run --source ebay --source ebay-uk -v
       - name: Enrich nutrition via Open Food Facts (by UPC)
         working-directory: services/scraper
         run: uv run scraper enrich -v

@@ -29,9 +29,9 @@ jobs:
       - name: Seed sources (ensures the amazon source exists)
         working-directory: services/scraper
         run: uv run scraper seed
-      - name: Scrape Amazon
+      - name: Scrape Amazon (US + UK)
         working-directory: services/scraper
-        run: uv run scraper run --source amazon -v
+        run: uv run scraper run --source amazon --source amazon-uk -v
       - name: Enrich nutrition via Open Food Facts (by UPC)
         working-directory: services/scraper
         run: uv run scraper enrich -v

@@ -22,6 +22,7 @@ from urllib.parse import quote
 
 from ..categorize import classify_category
 from ..config import get_settings
+from ..markets import EBAY_MARKETPLACE, currency_for
 from ..models import ProductRecord, VariantRecord
 from ..units import is_multipack, parse_container_size_grams, to_cents
 from .base import Connector
@@ -33,7 +34,6 @@ TOKEN_URL = f"{BASE_URL}/identity/v1/oauth2/token"
 SEARCH_URL = f"{BASE_URL}/buy/browse/v1/item_summary/search"
 ITEM_URL = f"{BASE_URL}/buy/browse/v1/item"
 SCOPE = "https://api.ebay.com/oauth/api_scope"
-MARKETPLACE = "EBAY_US"
 _PAGE_SIZE = 50
 # Only brand-new, fixed-price listings — keeps the price comparable to retail and
 # avoids auctions / used / refurbished noise.
@@ -69,6 +69,10 @@ class EbayConnector(Connector):
         # getItem recovers the GTIN/UPC but doubles the request count.
         return bool(self.config.get("fetch_details", True))
 
+    @property
+    def _marketplace(self) -> str:
+        return str(self.config.get("marketplace") or EBAY_MARKETPLACE.get(self.market, "EBAY_US"))
+
     async def _token(self) -> str:
         """Mint an OAuth client-credentials application access token."""
         settings = get_settings()
@@ -88,7 +92,7 @@ class EbayConnector(Connector):
     def _headers(self, token: str) -> dict[str, str]:
         return {
             "Authorization": f"Bearer {token}",
-            "X-EBAY-C-MARKETPLACE-ID": MARKETPLACE,
+            "X-EBAY-C-MARKETPLACE-ID": self._marketplace,
         }
 
     async def discover(self) -> list[dict[str, Any]]:
@@ -173,10 +177,11 @@ class EbayConnector(Connector):
         if not item_id or not title:
             return None
 
+        expected_currency = currency_for(self.market)
         price = summary.get("price") or {}
         price_cents = to_cents(price.get("value"))
-        currency = str(price.get("currency", "USD"))
-        if not price_cents or currency != "USD":
+        currency = str(price.get("currency", expected_currency))
+        if not price_cents or currency != expected_currency:
             return None
 
         # marketingPrice.originalPrice is eBay's strikethrough (a genuine markdown).
@@ -196,7 +201,7 @@ class EbayConnector(Connector):
             size_g=size_g,
             size_label=None,
             price_cents=price_cents,
-            currency="USD",
+            currency=expected_currency,
             in_stock=True,  # search returns active listings only
             upc=upc,
             compare_at_price_cents=compare_at,

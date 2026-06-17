@@ -29,6 +29,7 @@ class Connector(ABC):
         self.llm = llm
         self.base_url: str = str(source["baseUrl"]).rstrip("/")
         self.config: dict[str, Any] = source.get("config") or {}
+        self.market: str = str(source.get("market") or "US")
 
     @abstractmethod
     async def discover(self) -> list[Any]:

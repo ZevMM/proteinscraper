@@ -205,15 +205,16 @@ class Repository:
             return str(conn.execute(stmt).scalar_one())
 
     def get_source(self, slug: str) -> dict[str, Any] | None:
-        stmt = sa.select(sources.c.id, sources.c.slug, sources.c.type, sources.c.baseUrl,
-                         sources.c.config, sources.c.enabled).where(sources.c.slug == slug)
+        stmt = sa.select(sources.c.id, sources.c.slug, sources.c.type, sources.c.market,
+                         sources.c.baseUrl, sources.c.config,
+                         sources.c.enabled).where(sources.c.slug == slug)
         with self.engine.connect() as conn:
             row = conn.execute(stmt).mappings().first()
         return dict(row) if row else None
 
     def list_enabled_sources(self) -> list[dict[str, Any]]:
-        stmt = sa.select(sources.c.id, sources.c.slug, sources.c.type, sources.c.baseUrl,
-                         sources.c.config).where(sources.c.enabled.is_(True))
+        stmt = sa.select(sources.c.id, sources.c.slug, sources.c.type, sources.c.market,
+                         sources.c.baseUrl, sources.c.config).where(sources.c.enabled.is_(True))
         with self.engine.connect() as conn:
             return [dict(r) for r in conn.execute(stmt).mappings().all()]
 
