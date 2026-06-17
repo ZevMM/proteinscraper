@@ -66,14 +66,19 @@ class Fetcher:
         resp.raise_for_status()
         return resp.text
 
-    async def get_text(self, url: str, headers: dict[str, str] | None = None) -> str:
+    async def get_text(
+        self, url: str, headers: dict[str, str] | None = None, *, cache_key: str | None = None
+    ) -> str:
+        # cache_key disambiguates responses that share a URL but differ by header
+        # (e.g. eBay's X-EBAY-C-MARKETPLACE-ID), which the URL alone wouldn't key.
+        key = cache_key or url
         if self._cache is not None:
-            cached = self._cache.get(url)
+            cached = self._cache.get(key)
             if cached is not None:
                 return cached
         text = await self._get(url, headers)
         if self._cache is not None:
-            self._cache.set(url, text)
+            self._cache.set(key, text)
         return text
 
     @retry(

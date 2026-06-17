@@ -111,7 +111,11 @@ class EbayConnector(Connector):
                     f"{SEARCH_URL}?q={quote(query)}&limit={_PAGE_SIZE}&offset={offset}"
                     f"&filter={quote(_FILTER)}"
                 )
-                raw = await self.fetcher.get_text(url, headers=self._auth)
+                # Marketplace is sent as a header, not in the URL, so include it
+                # in the cache key — else US + UK searches collide on the same URL.
+                raw = await self.fetcher.get_text(
+                    url, headers=self._auth, cache_key=f"{url}|{self._marketplace}"
+                )
                 summaries = json.loads(raw).get("itemSummaries", []) or []
                 if not summaries:
                     break
@@ -145,9 +149,11 @@ class EbayConnector(Connector):
             item_id = str(ref.get("itemId", ""))
             if item_id:
                 try:
+                    item_url = f"{ITEM_URL}/{quote(item_id, safe='')}"
                     raw = await self.fetcher.get_text(
-                        f"{ITEM_URL}/{quote(item_id, safe='')}",
+                        item_url,
                         headers=getattr(self, "_auth", {}),
+                        cache_key=f"{item_url}|{self._marketplace}",
                     )
                     upc = self._find_gtin(json.loads(raw))
                 except Exception as exc:  # details are best-effort
