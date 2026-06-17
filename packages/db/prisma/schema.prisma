@@ -30,6 +30,14 @@ enum SourceType {
   ebay
 }
 
+/// Geographic market a source sells into. Drives currency + which listings a
+/// shopper sees; metrics are only ever compared within a single market.
+enum Market {
+  US
+  UK
+  IN
+}
+
 enum ExtractionMethod {
   shopify_json
   json_ld
@@ -62,6 +70,8 @@ model Source {
   slug      String     @unique
   name      String
   type      SourceType
+  /// Market this source sells into (US/UK/IN). Default US for legacy sources.
+  market    Market     @default(US)
   baseUrl   String
   enabled   Boolean    @default(true)
   /// Per-source crawl configuration (rate limits, paths, selectors, etc.)

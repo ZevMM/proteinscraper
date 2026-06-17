@@ -41,6 +41,7 @@ def seed() -> None:
         repo.upsert_source(
             slug=entry["slug"], name=entry["name"], type_=entry["type"],
             base_url=entry["base_url"], enabled=entry.get("enabled", True),
+            market=entry.get("market", "US"),
             config=entry.get("config"),
         )
         count += 1

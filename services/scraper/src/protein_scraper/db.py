@@ -30,6 +30,7 @@ _source_type = ENUM(
     "shopify", "jsonld", "walmart", "amazon", "kroger", "ebay",
     name="SourceType", create_type=False,
 )
+_market = ENUM("US", "UK", "IN", name="Market", create_type=False)
 _extraction_method = ENUM(
     "shopify_json", "json_ld", "html_parse", "llm", "manual",
     name="ExtractionMethod", create_type=False,
@@ -46,6 +47,7 @@ sources = sa.Table(
     sa.Column("slug", sa.Text, nullable=False),
     sa.Column("name", sa.Text, nullable=False),
     sa.Column("type", _source_type, nullable=False),
+    sa.Column("market", _market, nullable=False),
     sa.Column("baseUrl", sa.Text, nullable=False),
     sa.Column("enabled", sa.Boolean, nullable=False),
     sa.Column("config", JSONB),
@@ -184,18 +186,18 @@ class Repository:
     # -- Sources -----------------------------------------------------------
     def upsert_source(
         self, *, slug: str, name: str, type_: str, base_url: str, enabled: bool = True,
-        config: dict[str, Any] | None = None,
+        market: str = "US", config: dict[str, Any] | None = None,
     ) -> str:
         stmt = (
             pg_insert(sources)
             .values(
-                slug=slug, name=name, type=type_, baseUrl=base_url,
+                slug=slug, name=name, type=type_, market=market, baseUrl=base_url,
                 enabled=enabled, config=config, updatedAt=_utcnow(),
             )
             .on_conflict_do_update(
                 index_elements=[sources.c.slug],
                 set_={"name": name, "baseUrl": base_url, "enabled": enabled,
-                      "config": config, "updatedAt": _utcnow()},
+                      "market": market, "config": config, "updatedAt": _utcnow()},
             )
             .returning(sources.c.id)
         )

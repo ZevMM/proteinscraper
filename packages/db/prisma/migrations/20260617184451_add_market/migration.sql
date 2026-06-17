@@ -1,7 +1,11 @@
--- Derived comparison metrics, one row per variant, using the latest price
--- observation joined to the variant's nutrition facts.
--- DROP + CREATE (not CREATE OR REPLACE) so columns can be reordered freely.
+-- CreateEnum
+CREATE TYPE "Market" AS ENUM ('US', 'UK', 'IN');
 
+-- AlterTable
+ALTER TABLE "sources" ADD COLUMN     "market" "Market" NOT NULL DEFAULT 'US';
+
+-- Recreate listing_metrics to expose the source's market (for per-market
+-- filtering + currency-aware display). Keep in sync with sql/listing_metrics.sql.
 DROP VIEW IF EXISTS listing_metrics;
 CREATE VIEW listing_metrics AS
 WITH latest_price AS (
@@ -48,7 +52,6 @@ SELECT
   COALESCE(f."allergens", '{}')     AS allergens,
   COALESCE(f."sweeteners", '{}')    AS sweeteners,
 
-  -- Derived metrics ---------------------------------------------------------
   (n."servingsPerContainer" * n."proteinG")                       AS total_protein_g,
 
   CASE WHEN lp.price_cents > 0
