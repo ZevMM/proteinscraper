@@ -29,6 +29,11 @@ Deferred work and "revisit when…" notes. Not blocking; captured so they aren't
 
 ## Connectors / sources
 
+- **Amazon RapidAPI quota blocks Amazon UK/IN.** The "Real-Time Amazon Data" plan is
+  capped at 100 requests/month and is currently exhausted (HTTP 429, ~monthly reset), so
+  `amazon` (US) can't refresh and `amazon-uk` can't populate. To enable Amazon for any
+  market, upgrade the RapidAPI plan (raises the request cap). Until then Amazon markets
+  stay empty/stale; eBay (free Browse API) is the working multi-market source.
 - **eBay account-deletion endpoint.** Production Browse access is granted (the portal
   requirement is satisfied via exemption or otherwise). *If* eBay ever flags the
   marketplace-account-deletion notification as pending, build the webhook as a Next.js
